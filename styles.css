@@ -376,6 +376,13 @@ body {
     min-width: fit-content;
 }
 
+/* Jefferson Chaney's team (team-6) - display vertically */
+.org-children.team-6 {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
 /* Better alignment for single child nodes (like Nate's team) */
 .org-children .org-node:only-child {
     margin: 0 auto;
@@ -414,8 +421,7 @@ body {
 }
 
 .org-children.team-6::before {
-    background: linear-gradient(90deg, transparent 0%, #ff9f43 20%, #ff9f43 80%, transparent 100%);
-    box-shadow: 0 2px 8px rgba(255, 159, 67, 0.6);
+    display: none; /* Hide horizontal line for vertical layout */
 }
 
 .org-children.team-7::before {
@@ -445,6 +451,13 @@ body {
     visibility: visible;
 }
 
+/* For vertical teams (team-6), extend the vertical line down through all children */
+.org-children.team-6::after {
+    height: 100%;
+    background: linear-gradient(180deg, #ff9f43 0%, #ffaf53 100%);
+    box-shadow: 2px 0 8px rgba(255, 159, 67, 0.6);
+}
+
 /* Vertical line from horizontal connector to each child card - MUST be visible */
 .org-children .org-node::before {
     content: '';
@@ -460,6 +473,26 @@ body {
     display: block;
     opacity: 1;
     visibility: visible;
+}
+
+/* For vertical teams (team-6), hide the individual node lines and add connecting lines between members */
+.org-children.team-6 .org-node::before {
+    display: none;
+}
+
+/* Add connecting line between vertical team members */
+.org-children.team-6 .org-node:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 20px;
+    background: linear-gradient(180deg, #ff9f43 0%, #ffaf53 100%);
+    z-index: 1;
+    box-shadow: 2px 0 8px rgba(255, 159, 67, 0.6);
+    display: block;
 }
 
 .member-card {
