@@ -185,6 +185,65 @@ body {
     font-weight: 400;
 }
 
+/* Toggle Switch Styles */
+.toggle-container {
+    display: flex;
+    align-items: center;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.toggle-switch input[type="checkbox"] {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 26px;
+    transition: background-color 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.toggle-slider::before {
+    content: "";
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 2px;
+    background-color: #e8eaed;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: rgba(74, 144, 226, 0.8);
+    border-color: rgba(74, 144, 226, 1);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(24px);
+}
+
+.toggle-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #e8eaed;
+    user-select: none;
+}
+
 .btn-primary, .btn-secondary, .btn-danger, .btn-small {
     padding: 12px 24px;
     border: none;
@@ -702,12 +761,103 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+/* Edit mode styles */
+.member-card.edit-mode {
+    cursor: move;
+    border: 2px dashed rgba(74, 144, 226, 0.5);
+}
+
+.member-card.edit-mode:hover {
+    border-color: rgba(74, 144, 226, 0.8);
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+.member-card.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.member-card.drop-target {
+    border: 2px solid rgba(74, 144, 226, 1);
+    box-shadow: 0 0 20px rgba(74, 144, 226, 0.6);
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+.org-chart-container.edit-mode-active {
+    cursor: default;
+}
+
+.org-chart-container.edit-mode-active:active {
+    cursor: default;
+}
+
 .member-card:hover {
     border-color: rgba(74, 144, 226, 0.6);
     z-index: 5;
     transform: translateY(-4px);
     box-shadow: 0 12px 40px rgba(74, 144, 226, 0.3);
     background: rgba(255, 255, 255, 0.12);
+}
+
+/* Edit mode styles */
+.member-card.edit-mode {
+    cursor: move;
+    border: 2px dashed rgba(74, 144, 226, 0.5) !important;
+}
+
+.member-card.edit-mode:hover {
+    border-color: rgba(74, 144, 226, 0.8) !important;
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+.member-card.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.member-card.drop-target {
+    border: 2px solid rgba(74, 144, 226, 1) !important;
+    box-shadow: 0 0 20px rgba(74, 144, 226, 0.6);
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+/* Team section drop target */
+.org-children.drop-target-section,
+.org-node.drop-target-section {
+    background: rgba(74, 144, 226, 0.2) !important;
+    border: 3px dashed rgba(74, 144, 226, 1) !important;
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(74, 144, 226, 0.6) !important;
+    position: relative;
+}
+
+.org-children.drop-target-section::before {
+    content: 'Drop here to join this team';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(74, 144, 226, 0.9);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.org-chart-container.edit-mode-active {
+    cursor: default;
+}
+
+.org-chart-container.edit-mode-active:active {
+    cursor: default;
 }
 
 
