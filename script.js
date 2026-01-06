@@ -4,6 +4,7 @@ class TeamManager {
         this.teamMembers = this.loadFromStorage();
         this.currentEditingId = null;
         this.zoomLevel = 1;
+        this.baseZoomLevel = 1; // The zoom level that shows the entire chart (100%)
         this.panX = 0;
         this.panY = 0;
         this.isPanning = false;
@@ -524,8 +525,10 @@ class TeamManager {
         // Render as hierarchical org chart
         grid.innerHTML = this.renderOrgChart();
 
-        // Reset zoom after rendering
-        this.resetZoom();
+        // Calculate and set optimal zoom to fit entire chart after rendering
+        setTimeout(() => {
+            this.calculateOptimalZoom();
+        }, 100);
 
         // Add click listeners to cards
         grid.querySelectorAll('.member-card').forEach((card) => {
@@ -688,7 +691,37 @@ class TeamManager {
     }
 
     resetZoom() {
-        this.zoomLevel = 1;
+        this.calculateOptimalZoom();
+    }
+
+    calculateOptimalZoom() {
+        const container = document.getElementById('orgChartContainer');
+        const grid = document.getElementById('teamGrid');
+        const orgChart = grid.querySelector('.org-chart');
+        
+        if (!container || !grid || !orgChart) return;
+
+        // Get container dimensions
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        
+        // Get the actual rendered size of the org chart
+        const chartWidth = orgChart.scrollWidth;
+        const chartHeight = orgChart.scrollHeight;
+
+        // Calculate zoom to fit both width and height with some padding
+        const padding = 60; // pixels of padding on each side
+        const zoomX = (containerWidth - padding * 2) / chartWidth;
+        const zoomY = (containerHeight - padding * 2) / chartHeight;
+        
+        // Use the smaller zoom to ensure everything fits
+        const optimalZoom = Math.min(zoomX, zoomY, 1); // Don't zoom in beyond 100%
+        
+        // Store this as the base zoom (100% view)
+        this.baseZoomLevel = Math.max(0.2, optimalZoom);
+        
+        // Set the zoom to the base level and center the chart
+        this.zoomLevel = this.baseZoomLevel;
         this.panX = 0;
         this.panY = 0;
         this.updateTransform();
@@ -712,7 +745,9 @@ class TeamManager {
     updateZoomDisplay() {
         const zoomDisplay = document.getElementById('zoomLevel');
         if (zoomDisplay) {
-            zoomDisplay.textContent = Math.round(this.zoomLevel * 100) + '%';
+            // Calculate percentage relative to base zoom (100% = entire chart visible)
+            const percentage = Math.round((this.zoomLevel / this.baseZoomLevel) * 100);
+            zoomDisplay.textContent = percentage + '%';
         }
     }
 }
