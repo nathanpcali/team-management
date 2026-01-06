@@ -378,7 +378,15 @@ body {
 
 /* Jefferson Chaney's team (team-6) - display vertically */
 .org-children.team-6 {
-    flex-direction: column;
+    flex-direction: column !important;
+    align-items: center;
+    gap: 20px;
+    justify-content: flex-start;
+}
+
+/* Also make the org-level inside team-6 vertical */
+.org-children.team-6 > .org-level {
+    flex-direction: column !important;
     align-items: center;
     gap: 20px;
 }
