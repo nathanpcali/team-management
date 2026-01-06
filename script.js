@@ -120,6 +120,7 @@ class TeamManager {
 
         // Add EPs if they don't exist
         const epMappings = [
+            { id: '61', name: 'Jesse Schwartz', title: 'EP', pairedWith: '1', reportsTo: null, position: 'left' },
             { id: '52', name: 'EP - Aaron Porzel', title: 'EP', pairedWith: '3', reportsTo: '1', position: 'left' },
             { id: '58', name: 'Lauren Shawe', title: 'EP', pairedWith: '3', reportsTo: '1', position: 'right' },
             { id: '53', name: 'EP - Art Castle', title: 'EP', pairedWith: '4', reportsTo: '1' },
@@ -232,14 +233,30 @@ class TeamManager {
             }
         }
         
-        // Move Jesse Schwartz to report directly to Bryan Cook (top level, next to Bryan)
-        const jesseSchwartz = members.find(m => m.name && m.name.toLowerCase().includes('jesse schwartz'));
-        if (jesseSchwartz && jesseSchwartz.reportsTo !== '1') {
-            jesseSchwartz.reportsTo = '1'; // Report to Bryan Cook
-            // Remove any EP pairing if it exists
-            delete jesseSchwartz.pairedWith;
-            delete jesseSchwartz.position;
-            needsUpdate = true;
+        // Ensure Jesse Schwartz is set up as EP paired with Bryan Cook
+        const jesseSchwartz = memberMap.get('61');
+        if (jesseSchwartz && jesseSchwartz.name === 'Jesse Schwartz') {
+            // Update to be EP paired with Bryan Cook
+            if (jesseSchwartz.pairedWith !== '1' || jesseSchwartz.reportsTo !== null || jesseSchwartz.title !== 'EP') {
+                jesseSchwartz.pairedWith = '1';
+                jesseSchwartz.reportsTo = null;
+                jesseSchwartz.title = 'EP';
+                jesseSchwartz.position = 'left';
+                needsUpdate = true;
+            }
+        } else {
+            // Check if Jesse Schwartz exists with a different ID or name
+            const jesseSchwartzAlt = members.find(m => m.name && m.name.toLowerCase().includes('jesse schwartz'));
+            if (jesseSchwartzAlt) {
+                // Update existing Jesse Schwartz to be EP for Bryan Cook
+                jesseSchwartzAlt.id = '61';
+                jesseSchwartzAlt.name = 'Jesse Schwartz';
+                jesseSchwartzAlt.title = 'EP';
+                jesseSchwartzAlt.pairedWith = '1';
+                jesseSchwartzAlt.reportsTo = null;
+                jesseSchwartzAlt.position = 'left';
+                needsUpdate = true;
+            }
         }
 
         // Save if any changes were made
@@ -254,6 +271,7 @@ class TeamManager {
     getInitialTeamMembers() {
         return [
             // Top level - no reportsTo
+            { id: '61', name: 'Jesse Schwartz', title: 'EP', photo: '', notes: '', links: [], reportsTo: null, pairedWith: '1', position: 'left' },
             { id: '1', name: 'Bryan Cook', title: 'ECD', photo: '', notes: '', links: [], reportsTo: null },
             // Second level - report to top level
             // EPs (Executive Producers) - positioned to the left of CDs

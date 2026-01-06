@@ -1,5 +1,16 @@
 [
   {
+    "id": "61",
+    "name": "Jesse Schwartz",
+    "title": "EP",
+    "photo": "",
+    "notes": "",
+    "links": [],
+    "reportsTo": null,
+    "pairedWith": "1",
+    "position": "left"
+  },
+  {
     "id": "1",
     "name": "Bryan Cook",
     "title": "ECD",
