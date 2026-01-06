@@ -127,10 +127,15 @@ class TeamManager {
                     needsUpdate = true;
                 }
             } else {
-                // Ensure existing EP has pairedWith property
+                // Ensure existing EP has pairedWith property and correct structure
                 const existingEP = memberMap.get(ep.id);
-                if (!existingEP.hasOwnProperty('pairedWith')) {
+                if (!existingEP.hasOwnProperty('pairedWith') || existingEP.pairedWith !== ep.pairedWith) {
                     existingEP.pairedWith = ep.pairedWith;
+                    needsUpdate = true;
+                }
+                // Remove any old inline display properties if they exist
+                if (existingEP.hasOwnProperty('inlineDisplay')) {
+                    delete existingEP.inlineDisplay;
                     needsUpdate = true;
                 }
             }
@@ -676,6 +681,7 @@ class TeamManager {
         // Build hierarchy tree
         const hierarchy = this.buildHierarchy();
         console.log('Rendering org chart with hierarchy:', hierarchy);
+        // Force all EPs to use standard layout (no inline/right-side special cases)
         let html = '<div class="org-chart">';
         html += this.renderHierarchyLevel(hierarchy, 0, null);
         html += '</div>';
