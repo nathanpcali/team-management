@@ -85,10 +85,48 @@ class TeamManager {
                 // Old data format, reinitialize with proper structure
                 return this.getInitialTeamMembers();
             }
+            // Migrate hierarchy changes: update reporting relationships
+            this.migrateHierarchy(members);
             return members;
         }
         // If no stored data, initialize with team from organizational chart
         return this.getInitialTeamMembers();
+    }
+
+    // Migrate hierarchy to match latest structure
+    migrateHierarchy(members) {
+        let needsUpdate = false;
+        const memberMap = new Map();
+        members.forEach(m => memberMap.set(m.id, m));
+
+        // Update Jefferson Chaney's team (ID: '6')
+        const jeffersonChaneyId = '6';
+        const jeffersonTeam = ['18', '28', '39', '47', '50']; // Dave Bauer, John Gerbec, Shane Scherholz, Nancy Zhong, Steven Barber
+        
+        jeffersonTeam.forEach(memberId => {
+            const member = memberMap.get(memberId);
+            if (member && member.reportsTo !== jeffersonChaneyId) {
+                member.reportsTo = jeffersonChaneyId;
+                needsUpdate = true;
+            }
+        });
+
+        // Update Justin Sirizzotti's team (ID: '7')
+        const justinSirizzottiId = '7';
+        const justinTeam = ['19', '29']; // Craig Holzer, Joe Duva
+        
+        justinTeam.forEach(memberId => {
+            const member = memberMap.get(memberId);
+            if (member && member.reportsTo !== justinSirizzottiId) {
+                member.reportsTo = justinSirizzottiId;
+                needsUpdate = true;
+            }
+        });
+
+        // Save if any changes were made
+        if (needsUpdate) {
+            localStorage.setItem('harborTeamMembers', JSON.stringify(members));
+        }
     }
 
     // Get initial team members from organizational chart with reporting relationships
