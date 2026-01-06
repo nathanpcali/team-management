@@ -1045,7 +1045,6 @@ class TeamManager {
         
         if (!card) {
             console.warn(`Card not found for member: ${member.name} (ID: ${member.id})`);
-            // Try to render the team again in case it's not rendered yet
             this.renderTeam();
             setTimeout(() => this.zoomToMember(member), 200);
             return;
@@ -1056,56 +1055,88 @@ class TeamManager {
         
         if (!container || !grid) return;
 
-        // Reset zoom first to get accurate positions
-        const currentZoom = this.zoomLevel;
+        // Reset to base state
         this.setZoom(this.baseZoomLevel);
         this.panX = 0;
         this.panY = 0;
         this.updateTransform();
         
-        // Wait for layout to update
+        // Wait for reset to complete
         setTimeout(() => {
-            // Get positions after reset
+            // Get current positions
             const containerRect = container.getBoundingClientRect();
             const gridRect = grid.getBoundingClientRect();
             const cardRect = card.getBoundingClientRect();
             
-            // Get card center position relative to grid
-            const cardCenterX = (cardRect.left + cardRect.right) / 2 - gridRect.left;
-            const cardCenterY = (cardRect.top + cardRect.bottom) / 2 - gridRect.top;
+            // Card center in viewport
+            const cardCenterX = (cardRect.left + cardRect.right) / 2;
+            const cardCenterY = (cardRect.top + cardRect.bottom) / 2;
             
-            // Grid is centered at left: 50%, so its center is at gridRect.width / 2
-            const gridCenterX = gridRect.width / 2;
+            // Container center in viewport
+            const containerCenterX = containerRect.left + containerRect.width / 2;
+            const containerCenterY = containerRect.top + containerRect.height / 2;
             
-            // Calculate offset from grid center
-            const offsetX = cardCenterX - gridCenterX;
-            const offsetY = cardCenterY;
+            // The grid transform is: translate(calc(-50% + panX), panY) scale(zoom)
+            // Transform origin is 'top center', which means scaling happens from the center-top of the grid
+            // The grid is positioned at left: 50%, so its natural center is at container center horizontally
             
-            // Target zoom level (zoom in to 150% for better visibility)
-            const targetZoom = 1.5;
+            // Calculate where the card is relative to the grid's transform origin (top center)
+            // Grid's transform origin in viewport coordinates
+            const transformOriginX = gridRect.left + gridRect.width / 2; // Center of grid
+            const transformOriginY = gridRect.top; // Top of grid
             
-            // Container center
-            const containerCenterX = containerRect.width / 2;
-            const containerCenterY = containerRect.height / 2;
+            // Card offset from transform origin
+            const offsetX = cardCenterX - transformOriginX;
+            const offsetY = cardCenterY - transformOriginY;
             
-            // Calculate pan needed to center the card
-            // The transform is: translate(calc(-50% + panX), panY) scale(zoom)
-            // We want the card to be at container center after transform
-            // So: (cardCenterX - gridCenterX) * zoom + panX = 0 (to center horizontally)
-            const targetPanX = -offsetX * targetZoom;
-            const targetPanY = containerCenterY - (offsetY * targetZoom);
+            // Target zoom
+            const targetZoom = 2.0;
             
-            // Apply zoom and pan with smooth transition
+            // After transform, card will be at:
+            // X: transformOriginX + (offsetX * targetZoom) + panX
+            // Y: transformOriginY + (offsetY * targetZoom) + panY
+            
+            // We want card at container center:
+            // containerCenterX = transformOriginX + (offsetX * targetZoom) + panX
+            // containerCenterY = transformOriginY + (offsetY * targetZoom) + panY
+            
+            // Solve for pan:
+            this.panX = containerCenterX - transformOriginX - (offsetX * targetZoom);
+            this.panY = containerCenterY - transformOriginY - (offsetY * targetZoom);
+            
+            // Apply
             this.setZoom(targetZoom);
-            this.panX = targetPanX;
-            this.panY = targetPanY;
             this.updateTransform();
             
-            // Add a subtle highlight animation
-            card.style.animation = 'pulse 1s ease-in-out';
-            setTimeout(() => {
-                card.style.animation = '';
-            }, 1000);
+            // Fine-tune with iterative correction
+            const fineTune = () => {
+                const newCardRect = card.getBoundingClientRect();
+                const newCardCenterX = (newCardRect.left + newCardRect.right) / 2;
+                const newCardCenterY = (newCardRect.top + newCardRect.bottom) / 2;
+                const newContainerRect = container.getBoundingClientRect();
+                const newContainerCenterX = newContainerRect.left + newContainerRect.width / 2;
+                const newContainerCenterY = newContainerRect.top + newContainerRect.height / 2;
+                
+                const errorX = newCardCenterX - newContainerCenterX;
+                const errorY = newCardCenterY - newContainerCenterY;
+                
+                // Correct if error is significant
+                if (Math.abs(errorX) > 5 || Math.abs(errorY) > 5) {
+                    this.panX -= errorX / targetZoom;
+                    this.panY -= errorY / targetZoom;
+                    this.updateTransform();
+                    // Try one more time if still off
+                    setTimeout(fineTune, 50);
+                } else {
+                    // Success - add animation
+                    card.style.animation = 'pulse 1s ease-in-out';
+                    setTimeout(() => {
+                        card.style.animation = '';
+                    }, 1000);
+                }
+            };
+            
+            setTimeout(fineTune, 100);
         }, 100);
     }
 }
