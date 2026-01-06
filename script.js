@@ -186,10 +186,17 @@ class TeamManager {
             needsUpdate = true;
         }
         
-        // Joe Duva reports to Craig Holzer (ID: '19')
+        // Joe Duva reports to Vanessa Aoki (ID: '32') - switched with Kevin Curran
         const joeDuva = memberMap.get('29');
-        if (joeDuva && joeDuva.reportsTo !== '19') {
-            joeDuva.reportsTo = '19';
+        if (joeDuva && joeDuva.reportsTo !== '32') {
+            joeDuva.reportsTo = '32';
+            needsUpdate = true;
+        }
+        
+        // Kevin Curran reports to Craig Holzer (ID: '19') - switched with Joe Duva
+        const kevinCurran = memberMap.get('40');
+        if (kevinCurran && kevinCurran.reportsTo !== '19') {
+            kevinCurran.reportsTo = '19';
             needsUpdate = true;
         }
         
@@ -275,7 +282,7 @@ class TeamManager {
             { id: '26', name: 'Karla Llompart', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '16' },
             { id: '27', name: 'Stephen Noll', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '17' },
             { id: '28', name: 'John Gerbec', title: 'Senior Editor', photo: '', notes: '', links: [], reportsTo: '6' },
-            { id: '29', name: 'Joe Duva', title: 'AE', photo: '', notes: '', links: [], reportsTo: '19' },
+            { id: '29', name: 'Joe Duva', title: 'AE', photo: '', notes: '', links: [], reportsTo: '32' },
             { id: '30', name: 'Julia Marshall', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '20' },
             { id: '31', name: 'Chris Fontes', title: 'AE', photo: '', notes: '', links: [], reportsTo: '30' },
             { id: '32', name: 'Vanessa Aoki', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '21' },
@@ -287,7 +294,7 @@ class TeamManager {
             { id: '37', name: 'Jacob Fagliano', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '26' },
             { id: '38', name: 'Louie LaFleur', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '27' },
             { id: '39', name: 'Shane Scherholz', title: 'Junior Editor', photo: '', notes: '', links: [], reportsTo: '6' },
-            { id: '40', name: 'Kevin Curran', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '32' },
+            { id: '40', name: 'Kevin Curran', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '19' },
             { id: '41', name: 'Manuel Pimentel', title: 'PGD Editor', photo: '', notes: '', links: [], reportsTo: '33' },
             { id: '42', name: 'Victoria Villa', title: 'AE', photo: '', notes: '', links: [], reportsTo: '34' },
             // Sixth level
