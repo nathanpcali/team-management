@@ -798,10 +798,12 @@ class TeamManager {
                 const pairedEP = epMap.get(member.id);
                 
                 if (pairedEP) {
-                    // Special handling for Aaron (3) and Justin (7) - EP next to name
-                    const isSpecialLayout = member.id === '3' || member.id === '7';
+                    // Special handling for Justin (7) - EP next to name inline
+                    const isInlineLayout = member.id === '7';
+                    // Special handling for Aaron (3) - EP on the right
+                    const isRightSideLayout = member.id === '3';
                     
-                    if (isSpecialLayout) {
+                    if (isInlineLayout) {
                         // Render EP name next to CD name in the same card
                         const teamId = member.id;
                         html += `<div class="org-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
@@ -814,8 +816,31 @@ class TeamManager {
                         }
                         
                         html += '</div>';
+                    } else if (isRightSideLayout) {
+                        // Render CD on left, EP on right
+                        html += `<div class="ep-cd-pair ep-cd-pair-right">`;
+                        
+                        const teamId = member.id;
+                        // CD on the left
+                        html += `<div class="org-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.createMemberCard(member, true);
+                        
+                        if (member.children && member.children.length > 0) {
+                            html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                            html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>'; // Close CD node
+                        
+                        // EP on the right
+                        html += `<div class="org-node ep-node ep-node-right ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.createMemberCard(pairedEP, true);
+                        html += '</div>';
+                        
+                        html += '</div>'; // Close ep-cd-pair
                     } else {
-                        // Render EP and CD as a pair (original layout)
+                        // Render EP and CD as a pair (original layout - EP on left)
                         html += `<div class="ep-cd-pair">`;
                         
                         // EP on the left
