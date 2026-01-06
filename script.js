@@ -290,6 +290,13 @@ class TeamManager {
         document.getElementById('memberForm').reset();
         document.getElementById('memberId').value = '';
         document.getElementById('linksContainer').innerHTML = '';
+        
+        // Show CD selection and populate it
+        const cdGroup = document.getElementById('cdSelectionGroup');
+        const cdSelect = document.getElementById('memberCD');
+        cdGroup.style.display = 'block';
+        this.populateCDDropdown(cdSelect);
+        
         document.getElementById('memberModal').classList.add('show');
     }
 
@@ -302,6 +309,12 @@ class TeamManager {
         document.getElementById('memberTitle').value = member.title || '';
         document.getElementById('memberPhoto').value = member.photo || '';
         document.getElementById('memberNotes').value = member.notes || '';
+
+        // Hide CD selection when editing (reporting relationship is preserved)
+        document.getElementById('cdSelectionGroup').style.display = 'none';
+
+        // Hide CD selection when editing (reporting relationship is preserved)
+        document.getElementById('cdSelectionGroup').style.display = 'none';
 
         // Populate links
         const linksContainer = document.getElementById('linksContainer');
@@ -319,7 +332,28 @@ class TeamManager {
     closeMemberModal() {
         document.getElementById('memberModal').classList.remove('show');
         document.getElementById('memberForm').reset();
+        document.getElementById('cdSelectionGroup').style.display = 'none';
         this.currentEditingId = null;
+    }
+
+    // Populate CD dropdown with all Creative Directors
+    populateCDDropdown(selectElement) {
+        // Clear existing options except the first one
+        selectElement.innerHTML = '<option value="">Select a Creative Director...</option>';
+        
+        // Find all CDs and ACDs (Creative Directors and Associate Creative Directors)
+        const cds = this.teamMembers.filter(member => {
+            const title = (member.title || '').toUpperCase();
+            return title === 'CD' || title === 'ACD' || title.includes('CREATIVE DIRECTOR');
+        });
+        
+        // Add each CD as an option
+        cds.forEach(cd => {
+            const option = document.createElement('option');
+            option.value = cd.id;
+            option.textContent = cd.name;
+            selectElement.appendChild(option);
+        });
     }
 
     // Add link field
@@ -373,13 +407,14 @@ class TeamManager {
             }
         } else {
             // Add new member
+            const selectedCD = document.getElementById('memberCD').value;
             const memberData = {
                 name,
                 title,
                 photo,
                 notes,
                 links,
-                reportsTo: null // New members default to no manager
+                reportsTo: selectedCD || null // Set to selected CD or null if none selected
             };
             memberData.id = Date.now().toString();
             this.teamMembers.push(memberData);
