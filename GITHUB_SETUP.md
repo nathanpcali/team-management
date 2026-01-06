@@ -65,3 +65,4 @@ GitHub Pages will automatically update within a few minutes!
 - You can customize the repository name, but remember to update the URL accordingly
 - All data is stored in browser localStorage, so each visitor has their own data
 
+
