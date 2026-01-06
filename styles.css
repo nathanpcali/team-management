@@ -348,6 +348,15 @@ body {
     flex-direction: row; /* CD on left, EP on right */
 }
 
+/* EP-CD Pair with EPs on both sides (for Aaron) */
+.ep-cd-pair-both {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    position: relative;
+    flex-shrink: 0;
+}
+
 /* EP node styling - positioned to the left (default) */
 .org-node.ep-node {
     order: -1; /* Ensure EP appears before CD */

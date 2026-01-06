@@ -122,7 +122,8 @@ class TeamManager {
                         notes: '',
                         links: [],
                         reportsTo: ep.reportsTo,
-                        pairedWith: ep.pairedWith
+                        pairedWith: ep.pairedWith,
+                        position: ep.position || 'left'
                     });
                     needsUpdate = true;
                 }
@@ -131,6 +132,11 @@ class TeamManager {
                 const existingEP = memberMap.get(ep.id);
                 if (!existingEP.hasOwnProperty('pairedWith') || existingEP.pairedWith !== ep.pairedWith) {
                     existingEP.pairedWith = ep.pairedWith;
+                    needsUpdate = true;
+                }
+                // Update position if specified
+                if (ep.position && existingEP.position !== ep.position) {
+                    existingEP.position = ep.position;
                     needsUpdate = true;
                 }
                 // Remove any old inline display properties if they exist
@@ -191,8 +197,9 @@ class TeamManager {
             { id: '1', name: 'Bryan Cook', title: 'ECD', photo: '', notes: '', links: [], reportsTo: null },
             // Second level - report to top level
             // EPs (Executive Producers) - positioned to the left of CDs
-            { id: '52', name: 'EP - Aaron Porzel', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '3' },
+            { id: '52', name: 'EP - Aaron Porzel', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '3', position: 'left' },
             { id: '3', name: 'Aaron Porzel', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
+            { id: '58', name: 'Lauren Shawe', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '3', position: 'right' },
             { id: '53', name: 'EP - Art Castle', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '4' },
             { id: '4', name: 'Art Castle', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '54', name: 'EP - Jesse Thompson', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '5' },
@@ -804,30 +811,69 @@ class TeamManager {
                 const pairedEP = epMap.get(member.id);
                 
                 if (pairedEP) {
-                    // Render EP and CD as a pair (EP on left, CD on right) - standard layout for all
-                    html += `<div class="ep-cd-pair">`;
+                    // Check if this member has multiple EPs (like Aaron with left and right EPs)
+                    const allEPs = members.filter(m => m.pairedWith === member.id);
+                    const leftEP = allEPs.find(ep => ep.position === 'left' || !ep.position);
+                    const rightEP = allEPs.find(ep => ep.position === 'right');
                     
-                    // EP on the left
                     const teamId = member.id; // Use CD's ID for team color
-                    html += `<div class="org-node ep-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
-                    html += this.createMemberCard(pairedEP, true);
-                    html += '</div>';
                     
-                    // CD on the right
-                    html += `<div class="org-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
-                    html += this.createMemberCard(member, true);
-                    
-                    if (member.children && member.children.length > 0) {
-                        html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
-                        html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+                    if (leftEP && rightEP) {
+                        // Special case: Aaron has EPs on both sides
+                        html += `<div class="ep-cd-pair ep-cd-pair-both">`;
+                        
+                        // EP on the left
+                        html += `<div class="org-node ep-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.createMemberCard(leftEP, true);
                         html += '</div>';
+                        
+                        // CD in the middle
+                        html += `<div class="org-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.createMemberCard(member, true);
+                        
+                        if (member.children && member.children.length > 0) {
+                            html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                            html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>'; // Close CD node
+                        
+                        // EP on the right
+                        html += `<div class="org-node ep-node ep-node-right ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.createMemberCard(rightEP, true);
+                        html += '</div>';
+                        
+                        html += '</div>'; // Close ep-cd-pair-both
+                        
+                        processed.add(member.id);
+                        processed.add(leftEP.id);
+                        processed.add(rightEP.id);
+                    } else {
+                        // Standard layout: EP on left, CD on right
+                        html += `<div class="ep-cd-pair">`;
+                        
+                        // EP on the left
+                        html += `<div class="org-node ep-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.createMemberCard(pairedEP, true);
+                        html += '</div>';
+                        
+                        // CD on the right
+                        html += `<div class="org-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.createMemberCard(member, true);
+                        
+                        if (member.children && member.children.length > 0) {
+                            html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                            html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>'; // Close CD node
+                        html += '</div>'; // Close ep-cd-pair
+                        
+                        processed.add(member.id);
+                        processed.add(pairedEP.id);
                     }
-                    
-                    html += '</div>'; // Close CD node
-                    html += '</div>'; // Close ep-cd-pair
-                    
-                    processed.add(member.id);
-                    processed.add(pairedEP.id);
                 } else {
                     // Regular member without EP pair
                     const teamId = member.id;
