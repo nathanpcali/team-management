@@ -183,11 +183,9 @@ class TeamManager {
         // Mouse wheel zoom
         const container = document.getElementById('orgChartContainer');
         container.addEventListener('wheel', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                const delta = e.deltaY > 0 ? -0.1 : 0.1;
-                this.setZoom(this.zoomLevel + delta);
-            }
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            this.setZoom(this.zoomLevel + delta);
         }, { passive: false });
 
         // Pan functionality with mouse drag
