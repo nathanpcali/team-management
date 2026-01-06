@@ -1211,6 +1211,43 @@ body {
     line-height: 1.6;
 }
 
+.detail-select {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #e8eaed;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+}
+
+.detail-select:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(74, 144, 226, 0.4);
+}
+
+.detail-select:focus {
+    outline: none;
+    border-color: rgba(74, 144, 226, 0.6);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+.detail-select option {
+    background: #0a1929;
+    color: #e8eaed;
+}
+
+.detail-current-cd {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #b8d4f0;
+    font-style: italic;
+}
+
 .detail-links {
     display: flex;
     flex-direction: column;

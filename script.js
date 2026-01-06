@@ -10,8 +10,6 @@ class TeamManager {
         this.isPanning = false;
         this.startX = 0;
         this.startY = 0;
-        this.editMode = false;
-        this.draggedMember = null;
         this.init();
     }
 
@@ -351,9 +349,9 @@ class TeamManager {
             this.setZoom(this.zoomLevel + delta);
         }, { passive: false });
 
-        // Pan functionality with mouse drag (only when not in edit mode)
+        // Pan functionality with mouse drag
         container.addEventListener('mousedown', (e) => {
-            if (e.button === 0 && !this.editMode && !e.target.closest('.member-card')) { // Left mouse button, not in edit mode, not on a card
+            if (e.button === 0 && !e.target.closest('.member-card')) { // Left mouse button, not on a card
                 this.isPanning = true;
                 this.startX = e.clientX - this.panX;
                 this.startY = e.clientY - this.panY;
@@ -362,7 +360,7 @@ class TeamManager {
         });
 
         container.addEventListener('mousemove', (e) => {
-            if (this.isPanning && !this.editMode) {
+            if (this.isPanning) {
                 this.panX = e.clientX - this.startX;
                 this.panY = e.clientY - this.startY;
                 this.updateTransform();
@@ -371,9 +369,7 @@ class TeamManager {
 
         container.addEventListener('mouseup', () => {
             this.isPanning = false;
-            if (!this.editMode) {
-                container.style.cursor = 'grab';
-            }
+            container.style.cursor = 'grab';
         });
 
         container.addEventListener('mouseleave', () => {
@@ -521,6 +517,29 @@ class TeamManager {
         });
     }
 
+    // Populate CD dropdown for detail modal
+    populateCDDropdownForDetail(selectElement, currentReportsTo) {
+        // Clear existing options
+        selectElement.innerHTML = '<option value="">Select a Creative Director...</option>';
+        
+        // Find all CDs and ACDs (Creative Directors and Associate Creative Directors)
+        const cds = this.teamMembers.filter(member => {
+            const title = (member.title || '').toUpperCase();
+            return title === 'CD' || title === 'ACD' || title.includes('CREATIVE DIRECTOR');
+        });
+        
+        // Add each CD as an option
+        cds.forEach(cd => {
+            const option = document.createElement('option');
+            option.value = cd.id;
+            option.textContent = cd.name;
+            if (cd.id === currentReportsTo) {
+                option.selected = true;
+            }
+            selectElement.appendChild(option);
+        });
+    }
+
     // Add link field
     addLinkField(linkValue = '') {
         const container = document.getElementById('linksContainer');
@@ -647,6 +666,25 @@ class TeamManager {
             `;
         }
 
+        // CD Selection Dropdown (only show if not ECD and not EP)
+        const isECD = member.id === '1' || member.reportsTo === null;
+        const isEP = member.title && member.title.toLowerCase() === 'ep';
+        
+        if (!isECD && !isEP) {
+            const currentCD = member.reportsTo ? this.teamMembers.find(m => m.id === member.reportsTo) : null;
+            const currentCDName = currentCD ? currentCD.name : 'None';
+            
+            html += `
+                <div class="detail-section">
+                    <h3>Reports To</h3>
+                    <select id="detailCDSelect" class="detail-select">
+                        <option value="">Select a Creative Director...</option>
+                    </select>
+                    <p class="detail-current-cd">Current: ${this.escapeHtml(currentCDName)}</p>
+                </div>
+            `;
+        }
+
         // Notes
         if (member.notes) {
             html += `
@@ -684,6 +722,29 @@ class TeamManager {
         }
 
         content.innerHTML = html;
+        
+        // Populate CD dropdown if it exists
+        if (!isECD && !isEP) {
+            const cdSelect = document.getElementById('detailCDSelect');
+            if (cdSelect) {
+                this.populateCDDropdownForDetail(cdSelect, member.reportsTo);
+                
+                // Add change event listener
+                cdSelect.addEventListener('change', (e) => {
+                    const selectedCDId = e.target.value;
+                    if (selectedCDId && selectedCDId !== member.reportsTo) {
+                        member.reportsTo = selectedCDId;
+                        this.saveToStorage();
+                        this.renderTeam();
+                        // Close modal and reopen to show updated info
+                        setTimeout(() => {
+                            this.openDetailModal(member);
+                        }, 100);
+                    }
+                });
+            }
+        }
+        
         modal.classList.add('show');
     }
 
@@ -1016,9 +1077,8 @@ class TeamManager {
             linksHtml += '</div>';
         }
 
-        const draggableClass = this.editMode ? 'draggable' : '';
         return `
-            <div class="member-card ${draggableClass}" data-member-id="${member.id}" draggable="${this.editMode}">
+            <div class="member-card" data-member-id="${member.id}">
                 ${photoHtml}
                 <div class="member-name">${this.escapeHtml(member.name)}</div>
                 ${titleHtml}
@@ -1045,175 +1105,20 @@ class TeamManager {
         }
     }
 
-    // Update edit mode - enable/disable drag and drop
-    updateEditMode() {
-        const grid = document.getElementById('teamGrid');
-        if (!grid) return;
-
-        const cards = grid.querySelectorAll('.member-card');
-        cards.forEach(card => {
-            if (this.editMode) {
-                card.draggable = true;
-                card.classList.add('draggable');
-                card.classList.add('edit-mode');
-            } else {
-                card.draggable = false;
-                card.classList.remove('draggable');
-                card.classList.remove('edit-mode');
-            }
-        });
-
-        // Update container to allow drops
-        const container = document.getElementById('orgChartContainer');
-        if (container) {
-            if (this.editMode) {
-                container.classList.add('edit-mode-active');
-            } else {
-                container.classList.remove('edit-mode-active');
-            }
-        }
-
-        // Re-render to update card draggable state
-        this.renderTeam();
-    }
-
-    // Setup card interactions (click and drag)
+    // Setup card interactions (click only)
     setupCardInteractions(grid) {
-        // Setup drag for member cards
         grid.querySelectorAll('.member-card').forEach((card) => {
             const memberId = card.dataset.memberId;
             const member = this.teamMembers.find(m => m.id === memberId);
             if (!member) return;
 
-            // Click handler - only if not in edit mode
+            // Click handler
             card.addEventListener('click', (e) => {
-                if (!this.editMode && !this.isPanning) {
+                if (!this.isPanning) {
                     this.openDetailModal(member);
                 }
             });
-
-            // Drag handlers for edit mode
-            if (this.editMode) {
-                // Don't allow dragging the ECD (root) or EPs (they're paired with CDs)
-                const isECD = member.id === '1' || member.reportsTo === null;
-                const isEP = member.title && member.title.toLowerCase() === 'ep';
-                
-                if (!isECD && !isEP) {
-                    card.draggable = true;
-                    card.classList.add('edit-mode');
-
-                    card.addEventListener('dragstart', (e) => {
-                        this.draggedMember = member;
-                        card.classList.add('dragging');
-                        e.dataTransfer.effectAllowed = 'move';
-                        e.dataTransfer.setData('text/plain', memberId);
-                    });
-                } else {
-                    card.draggable = false;
-                    card.classList.add('edit-mode');
-                    card.classList.add('not-draggable');
-                    card.title = isECD ? 'ECD cannot be moved' : 'EPs cannot be moved';
-                }
-
-                card.addEventListener('dragend', (e) => {
-                    card.classList.remove('dragging');
-                    // Remove drop indicators from all team sections
-                    grid.querySelectorAll('.drop-target-section').forEach(target => {
-                        target.classList.remove('drop-target-section');
-                    });
-                    this.draggedMember = null;
-                });
-            } else {
-                card.draggable = false;
-                card.classList.remove('edit-mode');
-            }
         });
-
-        // Setup drop zones for team sections (org-children and org-node for CDs)
-        if (this.editMode) {
-            // Make team sections (org-children) drop targets - these are the team areas under each CD
-            grid.querySelectorAll('.org-children').forEach((section) => {
-                const teamId = section.dataset.teamId;
-                if (!teamId) return;
-
-                // Find the CD/team leader for this section
-                const teamLeader = this.teamMembers.find(m => m.id === teamId);
-                if (!teamLeader) return;
-
-                section.addEventListener('dragover', (e) => {
-                    if (this.draggedMember && this.draggedMember.id !== teamId) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.dataTransfer.dropEffect = 'move';
-                        section.classList.add('drop-target-section');
-                    }
-                });
-
-                section.addEventListener('dragleave', (e) => {
-                    // Only remove if we're actually leaving the section (not just moving to a child)
-                    const relatedTarget = e.relatedTarget;
-                    if (!relatedTarget || !section.contains(relatedTarget)) {
-                        section.classList.remove('drop-target-section');
-                    }
-                });
-
-                section.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    section.classList.remove('drop-target-section');
-                    
-                    if (this.draggedMember && this.draggedMember.id !== teamId) {
-                        // Update the reporting relationship to the team leader (CD)
-                        this.draggedMember.reportsTo = teamId;
-                        this.saveToStorage();
-                        this.renderTeam();
-                    }
-                });
-            });
-
-            // Also make CD/ACD nodes themselves drop targets (so you can drop on the CD card to join their team)
-            grid.querySelectorAll('.org-node[data-team-id]').forEach((node) => {
-                const teamId = node.dataset.teamId;
-                if (!teamId) return;
-
-                // Only make it a drop target if it's a CD/ACD (level 1) or the root ECD
-                const isLevel1 = node.closest('.org-level.level-1') !== null;
-                const isLevel0 = node.closest('.org-level.level-0') !== null;
-                if (!isLevel1 && !isLevel0) return;
-
-                // Don't make EP nodes drop targets
-                if (node.classList.contains('ep-node')) return;
-
-                node.addEventListener('dragover', (e) => {
-                    if (this.draggedMember && this.draggedMember.id !== teamId) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.dataTransfer.dropEffect = 'move';
-                        node.classList.add('drop-target-section');
-                    }
-                });
-
-                node.addEventListener('dragleave', (e) => {
-                    const relatedTarget = e.relatedTarget;
-                    if (!relatedTarget || !node.contains(relatedTarget)) {
-                        node.classList.remove('drop-target-section');
-                    }
-                });
-
-                node.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    node.classList.remove('drop-target-section');
-                    
-                    if (this.draggedMember && this.draggedMember.id !== teamId) {
-                        // Update the reporting relationship to this CD/leader
-                        this.draggedMember.reportsTo = teamId;
-                        this.saveToStorage();
-                        this.renderTeam();
-                    }
-                });
-            });
-        }
     }
 
     // Zoom functionality
