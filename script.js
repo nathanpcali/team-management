@@ -125,7 +125,7 @@ class TeamManager {
             { id: '53', name: 'EP - Art Castle', title: 'EP', pairedWith: '4', reportsTo: '1' },
             { id: '54', name: 'EP - Jesse Thompson', title: 'EP', pairedWith: '5', reportsTo: '1' },
             { id: '55', name: 'EP - Jefferson Chaney', title: 'EP', pairedWith: '6', reportsTo: '1' },
-            { id: '56', name: 'EP - Justin Sirizzotti', title: 'EP', pairedWith: '7', reportsTo: '1' },
+            { id: '60', name: 'Greg Zimny', title: 'EP', pairedWith: '7', reportsTo: '1', position: 'left' },
             { id: '57', name: 'EP - Nate Cali', title: 'EP', pairedWith: '8', reportsTo: '1' }
         ];
 
@@ -249,7 +249,7 @@ class TeamManager {
             { id: '5', name: 'Jesse Thompson', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '55', name: 'EP - Jefferson Chaney', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '6' },
             { id: '6', name: 'Jefferson Chaney', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
-            { id: '56', name: 'EP - Justin Sirizzotti', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '7' },
+            { id: '60', name: 'Greg Zimny', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '7', position: 'left' },
             { id: '7', name: 'Justin Sirizzotti', title: 'ACD', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '57', name: 'EP - Nate Cali', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '8' },
             { id: '8', name: 'Nate Cali', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
