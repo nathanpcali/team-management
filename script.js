@@ -12,25 +12,66 @@ class TeamManager {
         this.init();
     }
 
-    init() {
+    async init() {
+        // Load photos from JSON file and merge with team members
+        await this.loadPhotosFromJSON();
+        
         // If this is first load and we have initial team members, save them
         if (this.teamMembers.length > 0) {
             const stored = localStorage.getItem('harborTeamMembers');
             if (!stored) {
-                // First time - save initial data
+                // First time - save initial data (with photos from JSON)
                 this.saveToStorage();
             } else {
                 // Check if stored data has reportsTo - if not, update it
                 const storedMembers = JSON.parse(stored);
                 if (storedMembers.length > 0 && !storedMembers[0].hasOwnProperty('reportsTo')) {
-                    // Update with new structure
+                    // Update with new structure, but preserve photos from JSON
                     this.teamMembers = this.getInitialTeamMembers();
+                    await this.loadPhotosFromJSON(); // Reload photos after resetting structure
                     this.saveToStorage();
+                } else {
+                    // Merge photos from JSON into existing localStorage data
+                    await this.loadPhotosFromJSON();
                 }
             }
         }
         this.renderTeam();
         this.setupEventListeners();
+    }
+
+    // Load photos from JSON file
+    async loadPhotosFromJSON() {
+        try {
+            const response = await fetch('harbor-team-data.json');
+            if (response.ok) {
+                const jsonData = await response.json();
+                this.mergePhotosFromJSON(jsonData);
+            }
+        } catch (error) {
+            console.log('Could not load photos from JSON file:', error);
+            // Continue without photos - not a critical error
+        }
+    }
+
+    // Merge photos from JSON into current team members
+    mergePhotosFromJSON(jsonData) {
+        const jsonMap = new Map();
+        jsonData.forEach(member => {
+            if (member.photo) {
+                jsonMap.set(member.id, member.photo);
+            }
+        });
+
+        // Update team members with photos from JSON (prefer JSON photos over existing)
+        this.teamMembers.forEach(member => {
+            if (jsonMap.has(member.id)) {
+                member.photo = jsonMap.get(member.id);
+            }
+        });
+
+        // Save updated data
+        this.saveToStorage();
     }
 
     // Load team members from localStorage
