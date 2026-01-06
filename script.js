@@ -86,8 +86,8 @@ class TeamManager {
                 return this.getInitialTeamMembers();
             }
             // Migrate hierarchy changes: update reporting relationships
-            this.migrateHierarchy(members);
-            return members;
+            const updatedMembers = this.migrateHierarchy(members);
+            return updatedMembers || members;
         }
         // If no stored data, initialize with team from organizational chart
         return this.getInitialTeamMembers();
@@ -98,6 +98,43 @@ class TeamManager {
         let needsUpdate = false;
         const memberMap = new Map();
         members.forEach(m => memberMap.set(m.id, m));
+
+        // Add EPs if they don't exist
+        const epMappings = [
+            { id: '51', name: 'EP - Bryan Cook', title: 'EP', pairedWith: '1', reportsTo: null },
+            { id: '52', name: 'EP - Aaron Porzel', title: 'EP', pairedWith: '3', reportsTo: '1' },
+            { id: '53', name: 'EP - Art Castle', title: 'EP', pairedWith: '4', reportsTo: '1' },
+            { id: '54', name: 'EP - Jesse Thompson', title: 'EP', pairedWith: '5', reportsTo: '1' },
+            { id: '55', name: 'EP - Jefferson Chaney', title: 'EP', pairedWith: '6', reportsTo: '1' },
+            { id: '56', name: 'EP - Justin Sirizzotti', title: 'EP', pairedWith: '7', reportsTo: '1' },
+            { id: '57', name: 'EP - Nate Cali', title: 'EP', pairedWith: '8', reportsTo: '1' }
+        ];
+
+        epMappings.forEach(ep => {
+            if (!memberMap.has(ep.id)) {
+                // Check if the paired member exists
+                if (memberMap.has(ep.pairedWith)) {
+                    members.push({
+                        id: ep.id,
+                        name: ep.name,
+                        title: ep.title,
+                        photo: '',
+                        notes: '',
+                        links: [],
+                        reportsTo: ep.reportsTo,
+                        pairedWith: ep.pairedWith
+                    });
+                    needsUpdate = true;
+                }
+            } else {
+                // Ensure existing EP has pairedWith property
+                const existingEP = memberMap.get(ep.id);
+                if (!existingEP.hasOwnProperty('pairedWith')) {
+                    existingEP.pairedWith = ep.pairedWith;
+                    needsUpdate = true;
+                }
+            }
+        });
 
         // Update Jefferson Chaney's team (ID: '6')
         const jeffersonChaneyId = '6';
@@ -137,6 +174,8 @@ class TeamManager {
         if (needsUpdate) {
             localStorage.setItem('harborTeamMembers', JSON.stringify(members));
         }
+        
+        return members;
     }
 
     // Get initial team members from organizational chart with reporting relationships
