@@ -167,19 +167,6 @@ class TeamManager {
             this.openAddModal();
         });
 
-        // Reset data button
-        const resetBtn = document.getElementById('resetDataBtn');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                if (confirm('This will reset all team data to the organizational chart structure. Continue?')) {
-                    localStorage.removeItem('harborTeamMembers');
-                    this.teamMembers = this.getInitialTeamMembers();
-                    this.saveToStorage();
-                    this.renderTeam();
-                }
-            });
-        }
-
         // Zoom controls
         document.getElementById('zoomInBtn').addEventListener('click', () => {
             this.zoomIn();
