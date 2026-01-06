@@ -963,10 +963,12 @@ class TeamManager {
 
     // Perform search and display results
     performSearch(query, searchResults) {
-        const matches = this.teamMembers.filter(member => 
-            member.name.toLowerCase().includes(query) || 
-            member.title.toLowerCase().includes(query)
-        );
+        const queryLower = query.toLowerCase().trim();
+        const matches = this.teamMembers.filter(member => {
+            const nameLower = member.name.toLowerCase();
+            const titleLower = member.title.toLowerCase();
+            return nameLower.includes(queryLower) || titleLower.includes(queryLower);
+        });
 
         if (matches.length === 0) {
             searchResults.innerHTML = '<div class="search-result-item no-results">No matches found</div>';
@@ -974,18 +976,30 @@ class TeamManager {
             return;
         }
 
-        // Sort matches: exact name matches first, then by name
+        // Sort matches: exact name matches first, then starts with query, then contains query
         matches.sort((a, b) => {
-            const aExact = a.name.toLowerCase() === query;
-            const bExact = b.name.toLowerCase() === query;
+            const aName = a.name.toLowerCase();
+            const bName = b.name.toLowerCase();
+            
+            // Exact match
+            const aExact = aName === queryLower;
+            const bExact = bName === queryLower;
             if (aExact && !bExact) return -1;
             if (!aExact && bExact) return 1;
+            
+            // Starts with query
+            const aStarts = aName.startsWith(queryLower);
+            const bStarts = bName.startsWith(queryLower);
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            
+            // Alphabetical
             return a.name.localeCompare(b.name);
         });
 
         searchResults.innerHTML = matches.map(member => 
             `<div class="search-result-item" data-member-id="${member.id}">
-                <div class="search-result-name">${this.highlightMatch(member.name, query)}</div>
+                <div class="search-result-name">${this.highlightMatch(member.name, queryLower)}</div>
                 <div class="search-result-title">${member.title}</div>
             </div>`
         ).join('');
@@ -1014,55 +1028,74 @@ class TeamManager {
 
     // Zoom to a specific member's card
     zoomToMember(member) {
-        const card = document.querySelector(`.member-card[data-member-id="${member.id}"]`);
-        if (!card) return;
+        // Try multiple selectors to find the card
+        let card = document.querySelector(`.member-card[data-member-id="${member.id}"]`);
+        
+        // If not found, try finding by name (case-insensitive)
+        if (!card) {
+            const allCards = document.querySelectorAll('.member-card');
+            for (let c of allCards) {
+                const cardName = c.querySelector('.member-name')?.textContent?.trim();
+                if (cardName && cardName.toLowerCase() === member.name.toLowerCase()) {
+                    card = c;
+                    break;
+                }
+            }
+        }
+        
+        if (!card) {
+            console.warn(`Card not found for member: ${member.name} (ID: ${member.id})`);
+            // Try to render the team again in case it's not rendered yet
+            this.renderTeam();
+            setTimeout(() => this.zoomToMember(member), 200);
+            return;
+        }
 
         const container = document.getElementById('orgChartContainer');
         const grid = document.getElementById('teamGrid');
         
         if (!container || !grid) return;
 
-        // Wait a moment for any layout changes
+        // Reset zoom first to get accurate positions
+        const currentZoom = this.zoomLevel;
+        this.setZoom(this.baseZoomLevel);
+        this.panX = 0;
+        this.panY = 0;
+        this.updateTransform();
+        
+        // Wait for layout to update
         setTimeout(() => {
-            // Get current positions
+            // Get positions after reset
             const containerRect = container.getBoundingClientRect();
             const gridRect = grid.getBoundingClientRect();
             const cardRect = card.getBoundingClientRect();
             
-            // Calculate card position relative to grid (before any transform)
-            // The grid has transform applied, so we need to account for that
-            const gridComputedStyle = window.getComputedStyle(grid);
-            const currentTransform = gridComputedStyle.transform;
+            // Get card center position relative to grid
+            const cardCenterX = (cardRect.left + cardRect.right) / 2 - gridRect.left;
+            const cardCenterY = (cardRect.top + cardRect.bottom) / 2 - gridRect.top;
             
-            // Get the card's position relative to the grid's origin
-            // Since grid uses left: 50% and transform, we need to calculate from the grid's actual position
-            const cardXRelativeToGrid = cardRect.left - gridRect.left;
-            const cardYRelativeToGrid = cardRect.top - gridRect.top;
-            
-            // Get the grid's center point (since it's positioned at left: 50%)
+            // Grid is centered at left: 50%, so its center is at gridRect.width / 2
             const gridCenterX = gridRect.width / 2;
-            const gridCenterY = 0; // Top of grid
             
             // Calculate offset from grid center
-            const offsetX = cardXRelativeToGrid - gridCenterX;
-            const offsetY = cardYRelativeToGrid - gridCenterY;
+            const offsetX = cardCenterX - gridCenterX;
+            const offsetY = cardCenterY;
             
             // Target zoom level (zoom in to 150% for better visibility)
             const targetZoom = 1.5;
             
-            // Calculate pan to center the card
-            // We want: card position * targetZoom + panX = container center
+            // Container center
             const containerCenterX = containerRect.width / 2;
             const containerCenterY = containerRect.height / 2;
             
-            // Calculate pan needed
-            // Since grid is centered with left: 50%, we need to account for that
-            // The transform uses translate(calc(-50% + panX), panY)
-            // So we need: -offsetX * targetZoom = panX (to center horizontally)
+            // Calculate pan needed to center the card
+            // The transform is: translate(calc(-50% + panX), panY) scale(zoom)
+            // We want the card to be at container center after transform
+            // So: (cardCenterX - gridCenterX) * zoom + panX = 0 (to center horizontally)
             const targetPanX = -offsetX * targetZoom;
             const targetPanY = containerCenterY - (offsetY * targetZoom);
             
-            // Apply zoom and pan
+            // Apply zoom and pan with smooth transition
             this.setZoom(targetZoom);
             this.panX = targetPanX;
             this.panY = targetPanY;
@@ -1073,7 +1106,7 @@ class TeamManager {
             setTimeout(() => {
                 card.style.animation = '';
             }, 1000);
-        }, 50);
+        }, 100);
     }
 }
 
