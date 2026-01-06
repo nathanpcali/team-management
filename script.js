@@ -766,8 +766,25 @@ class TeamManager {
         
         // Set the zoom to the base level and center the chart
         this.zoomLevel = this.baseZoomLevel;
-        this.panX = 0;
-        this.panY = 0;
+        
+        // Calculate the scaled dimensions
+        const scaledWidth = chartWidth * this.zoomLevel;
+        const scaledHeight = chartHeight * this.zoomLevel;
+        
+        // Center the chart horizontally if it's smaller than the container
+        if (scaledWidth < containerWidth) {
+            this.panX = (containerWidth - scaledWidth) / 2;
+        } else {
+            this.panX = 0;
+        }
+        
+        // Center the chart vertically if it's smaller than the container
+        if (scaledHeight < containerHeight) {
+            this.panY = (containerHeight - scaledHeight) / 2;
+        } else {
+            this.panY = 0;
+        }
+        
         this.updateTransform();
         this.updateZoomDisplay();
     }
