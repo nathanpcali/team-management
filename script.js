@@ -472,11 +472,11 @@ class TeamManager {
             `;
         }
 
-        // Links
+        // Links (REEL)
         if (member.links && member.links.length > 0) {
             html += `
                 <div class="detail-section">
-                    <h3>Links</h3>
+                    <h3>REEL</h3>
                     <div class="detail-links">
             `;
             member.links.forEach(link => {
