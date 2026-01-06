@@ -1094,15 +1094,26 @@ class TeamManager {
 
             // Drag handlers for edit mode
             if (this.editMode) {
-                card.draggable = true;
-                card.classList.add('edit-mode');
+                // Don't allow dragging the ECD (root) or EPs (they're paired with CDs)
+                const isECD = member.id === '1' || member.reportsTo === null;
+                const isEP = member.title && member.title.toLowerCase() === 'ep';
+                
+                if (!isECD && !isEP) {
+                    card.draggable = true;
+                    card.classList.add('edit-mode');
 
-                card.addEventListener('dragstart', (e) => {
-                    this.draggedMember = member;
-                    card.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', memberId);
-                });
+                    card.addEventListener('dragstart', (e) => {
+                        this.draggedMember = member;
+                        card.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', memberId);
+                    });
+                } else {
+                    card.draggable = false;
+                    card.classList.add('edit-mode');
+                    card.classList.add('not-draggable');
+                    card.title = isECD ? 'ECD cannot be moved' : 'EPs cannot be moved';
+                }
 
                 card.addEventListener('dragend', (e) => {
                     card.classList.remove('dragging');

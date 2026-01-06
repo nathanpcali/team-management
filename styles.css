@@ -813,6 +813,17 @@ body {
     z-index: 10;
 }
 
+.member-card.edit-mode.not-draggable {
+    cursor: not-allowed;
+    border: 2px dashed rgba(255, 255, 255, 0.2) !important;
+    opacity: 0.6;
+}
+
+.member-card.edit-mode.not-draggable:hover {
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
 .member-card.dragging {
     opacity: 0.5;
     transform: scale(0.95);
