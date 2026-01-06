@@ -108,9 +108,18 @@ class TeamManager {
         const memberMap = new Map();
         members.forEach(m => memberMap.set(m.id, m));
 
+        // Remove EP - Bryan Cook if it exists (should not be there)
+        const epBryanCook = memberMap.get('51');
+        if (epBryanCook && epBryanCook.name === 'EP - Bryan Cook') {
+            const index = members.findIndex(m => m.id === '51' && m.name === 'EP - Bryan Cook');
+            if (index !== -1) {
+                members.splice(index, 1);
+                needsUpdate = true;
+            }
+        }
+
         // Add EPs if they don't exist
         const epMappings = [
-            { id: '51', name: 'EP - Bryan Cook', title: 'EP', pairedWith: '1', reportsTo: null },
             { id: '52', name: 'EP - Aaron Porzel', title: 'EP', pairedWith: '3', reportsTo: '1', position: 'left' },
             { id: '58', name: 'Lauren Shawe', title: 'EP', pairedWith: '3', reportsTo: '1', position: 'right' },
             { id: '53', name: 'EP - Art Castle', title: 'EP', pairedWith: '4', reportsTo: '1' },
@@ -228,7 +237,6 @@ class TeamManager {
     getInitialTeamMembers() {
         return [
             // Top level - no reportsTo
-            { id: '51', name: 'EP - Bryan Cook', title: 'EP', photo: '', notes: '', links: [], reportsTo: null, pairedWith: '1' },
             { id: '1', name: 'Bryan Cook', title: 'ECD', photo: '', notes: '', links: [], reportsTo: null },
             // Second level - report to top level
             // EPs (Executive Producers) - positioned to the left of CDs
