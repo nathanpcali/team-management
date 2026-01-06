@@ -210,6 +210,9 @@ class TeamManager {
 
     // Setup event listeners
     setupEventListeners() {
+        // Search functionality
+        this.setupSearch();
+        
         // Add member button
         document.getElementById('addMemberBtn').addEventListener('click', () => {
             this.openAddModal();
@@ -878,6 +881,199 @@ class TeamManager {
             const percentage = Math.round((this.zoomLevel / this.baseZoomLevel) * 100);
             zoomDisplay.textContent = percentage + '%';
         }
+    }
+
+    // Setup search functionality
+    setupSearch() {
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+
+        if (!searchInput || !searchResults) return;
+
+        let searchTimeout;
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim().toLowerCase();
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length === 0) {
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            // Debounce search
+            searchTimeout = setTimeout(() => {
+                this.performSearch(query, searchResults);
+            }, 150);
+        });
+
+        // Hide results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        // Handle keyboard navigation
+        searchInput.addEventListener('keydown', (e) => {
+            const visibleResults = searchResults.querySelectorAll('.search-result-item:not([style*="display: none"])');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const current = searchResults.querySelector('.search-result-item.highlighted');
+                if (current) {
+                    current.classList.remove('highlighted');
+                    const next = current.nextElementSibling || visibleResults[0];
+                    if (next) {
+                        next.classList.add('highlighted');
+                        next.scrollIntoView({ block: 'nearest' });
+                    }
+                } else if (visibleResults[0]) {
+                    visibleResults[0].classList.add('highlighted');
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const current = searchResults.querySelector('.search-result-item.highlighted');
+                if (current) {
+                    current.classList.remove('highlighted');
+                    const prev = current.previousElementSibling || visibleResults[visibleResults.length - 1];
+                    if (prev) {
+                        prev.classList.add('highlighted');
+                        prev.scrollIntoView({ block: 'nearest' });
+                    }
+                } else if (visibleResults[visibleResults.length - 1]) {
+                    visibleResults[visibleResults.length - 1].classList.add('highlighted');
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const highlighted = searchResults.querySelector('.search-result-item.highlighted');
+                if (highlighted) {
+                    highlighted.click();
+                } else if (visibleResults[0]) {
+                    visibleResults[0].click();
+                }
+            } else if (e.key === 'Escape') {
+                searchResults.style.display = 'none';
+                searchInput.value = '';
+            }
+        });
+    }
+
+    // Perform search and display results
+    performSearch(query, searchResults) {
+        const matches = this.teamMembers.filter(member => 
+            member.name.toLowerCase().includes(query) || 
+            member.title.toLowerCase().includes(query)
+        );
+
+        if (matches.length === 0) {
+            searchResults.innerHTML = '<div class="search-result-item no-results">No matches found</div>';
+            searchResults.style.display = 'block';
+            return;
+        }
+
+        // Sort matches: exact name matches first, then by name
+        matches.sort((a, b) => {
+            const aExact = a.name.toLowerCase() === query;
+            const bExact = b.name.toLowerCase() === query;
+            if (aExact && !bExact) return -1;
+            if (!aExact && bExact) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        searchResults.innerHTML = matches.map(member => 
+            `<div class="search-result-item" data-member-id="${member.id}">
+                <div class="search-result-name">${this.highlightMatch(member.name, query)}</div>
+                <div class="search-result-title">${member.title}</div>
+            </div>`
+        ).join('');
+
+        // Add click listeners to results
+        searchResults.querySelectorAll('.search-result-item[data-member-id]').forEach(item => {
+            item.addEventListener('click', () => {
+                const memberId = item.dataset.memberId;
+                const member = this.teamMembers.find(m => m.id === memberId);
+                if (member) {
+                    this.zoomToMember(member);
+                    searchResults.style.display = 'none';
+                    document.getElementById('searchInput').value = '';
+                }
+            });
+        });
+
+        searchResults.style.display = 'block';
+    }
+
+    // Highlight matching text in search results
+    highlightMatch(text, query) {
+        const regex = new RegExp(`(${query})`, 'gi');
+        return text.replace(regex, '<mark>$1</mark>');
+    }
+
+    // Zoom to a specific member's card
+    zoomToMember(member) {
+        const card = document.querySelector(`.member-card[data-member-id="${member.id}"]`);
+        if (!card) return;
+
+        const container = document.getElementById('orgChartContainer');
+        const grid = document.getElementById('teamGrid');
+        
+        if (!container || !grid) return;
+
+        // Wait a moment for any layout changes
+        setTimeout(() => {
+            // Get current positions
+            const containerRect = container.getBoundingClientRect();
+            const gridRect = grid.getBoundingClientRect();
+            const cardRect = card.getBoundingClientRect();
+            
+            // Calculate card position relative to grid (before any transform)
+            // The grid has transform applied, so we need to account for that
+            const gridComputedStyle = window.getComputedStyle(grid);
+            const currentTransform = gridComputedStyle.transform;
+            
+            // Get the card's position relative to the grid's origin
+            // Since grid uses left: 50% and transform, we need to calculate from the grid's actual position
+            const cardXRelativeToGrid = cardRect.left - gridRect.left;
+            const cardYRelativeToGrid = cardRect.top - gridRect.top;
+            
+            // Get the grid's center point (since it's positioned at left: 50%)
+            const gridCenterX = gridRect.width / 2;
+            const gridCenterY = 0; // Top of grid
+            
+            // Calculate offset from grid center
+            const offsetX = cardXRelativeToGrid - gridCenterX;
+            const offsetY = cardYRelativeToGrid - gridCenterY;
+            
+            // Target zoom level (zoom in to 150% for better visibility)
+            const targetZoom = 1.5;
+            
+            // Calculate pan to center the card
+            // We want: card position * targetZoom + panX = container center
+            const containerCenterX = containerRect.width / 2;
+            const containerCenterY = containerRect.height / 2;
+            
+            // Calculate pan needed
+            // Since grid is centered with left: 50%, we need to account for that
+            // The transform uses translate(calc(-50% + panX), panY)
+            // So we need: -offsetX * targetZoom = panX (to center horizontally)
+            const targetPanX = -offsetX * targetZoom;
+            const targetPanY = containerCenterY - (offsetY * targetZoom);
+            
+            // Apply zoom and pan
+            this.setZoom(targetZoom);
+            this.panX = targetPanX;
+            this.panY = targetPanY;
+            this.updateTransform();
+            
+            // Add a subtle highlight animation
+            card.style.animation = 'pulse 1s ease-in-out';
+            setTimeout(() => {
+                card.style.animation = '';
+            }, 1000);
+        }, 50);
     }
 }
 
