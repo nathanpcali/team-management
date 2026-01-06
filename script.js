@@ -85,6 +85,15 @@ class TeamManager {
                 // Old data format, reinitialize with proper structure
                 return this.getInitialTeamMembers();
             }
+            
+            // Check if Lauren Shawe (ID: 58) exists - if not, clear and reload
+            const hasLaurenShawe = members.some(m => m.id === '58');
+            if (!hasLaurenShawe) {
+                console.log('Lauren Shawe not found in data. Clearing localStorage and reloading...');
+                localStorage.removeItem('harborTeamMembers');
+                return this.getInitialTeamMembers();
+            }
+            
             // Migrate hierarchy changes: update reporting relationships
             const updatedMembers = this.migrateHierarchy(members);
             return updatedMembers || members;
@@ -102,7 +111,8 @@ class TeamManager {
         // Add EPs if they don't exist
         const epMappings = [
             { id: '51', name: 'EP - Bryan Cook', title: 'EP', pairedWith: '1', reportsTo: null },
-            { id: '52', name: 'EP - Aaron Porzel', title: 'EP', pairedWith: '3', reportsTo: '1' },
+            { id: '52', name: 'EP - Aaron Porzel', title: 'EP', pairedWith: '3', reportsTo: '1', position: 'left' },
+            { id: '58', name: 'Lauren Shawe', title: 'EP', pairedWith: '3', reportsTo: '1', position: 'right' },
             { id: '53', name: 'EP - Art Castle', title: 'EP', pairedWith: '4', reportsTo: '1' },
             { id: '54', name: 'EP - Jesse Thompson', title: 'EP', pairedWith: '5', reportsTo: '1' },
             { id: '55', name: 'EP - Jefferson Chaney', title: 'EP', pairedWith: '6', reportsTo: '1' },
