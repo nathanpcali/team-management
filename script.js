@@ -896,15 +896,31 @@ class TeamManager {
         
         // For level 0, sort to ensure EPs appear with their paired members
         rootMembers.sort((a, b) => {
-            // If one has a pairedWith, sort by the paired ID
+            // If a is an EP paired with b, a should come first
+            if (a.pairedWith === b.id) {
+                return -1;
+            }
+            // If b is an EP paired with a, b should come first
+            if (b.pairedWith === a.id) {
+                return 1;
+            }
+            // If both have pairedWith, sort by the paired ID
             if (a.pairedWith && b.pairedWith) {
                 return a.pairedWith.localeCompare(b.pairedWith);
             }
+            // If a has pairedWith, compare a's paired ID with b's ID
             if (a.pairedWith) {
-                return a.pairedWith.localeCompare(b.id);
+                const comparison = a.pairedWith.localeCompare(b.id);
+                // If they're equal, EP should come before the paired member
+                if (comparison === 0) return -1;
+                return comparison;
             }
+            // If b has pairedWith, compare a's ID with b's paired ID
             if (b.pairedWith) {
-                return a.id.localeCompare(b.pairedWith);
+                const comparison = a.id.localeCompare(b.pairedWith);
+                // If they're equal, EP should come before the paired member
+                if (comparison === 0) return 1;
+                return comparison;
             }
             return a.id.localeCompare(b.id);
         });
