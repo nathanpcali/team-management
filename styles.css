@@ -54,6 +54,17 @@ body {
     text-transform: uppercase;
 }
 
+.harbor-text.clickable-logo {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.harbor-text.clickable-logo:hover {
+    color: #e8eaed;
+    transform: scale(1.02);
+}
+
 .team-label {
     font-family: 'Inter', sans-serif;
     font-size: 18px;
@@ -321,6 +332,28 @@ body {
     gap: 120px;
     overflow-x: auto;
     padding-bottom: 10px;
+}
+
+/* EP-CD Pair container */
+.ep-cd-pair {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* EP node styling - positioned to the left */
+.org-node.ep-node {
+    order: -1; /* Ensure EP appears before CD */
+    position: relative;
+}
+
+/* Ensure EP cards have the same styling but can be visually distinct if needed */
+.ep-node .member-card {
+    opacity: 0.9; /* Slightly dimmed to indicate temporary profile */
+    border-style: dashed; /* Dashed border to indicate temporary */
+    border-width: 2px;
 }
 
 /* Color coding for each CD team */

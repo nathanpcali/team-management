@@ -143,13 +143,21 @@ class TeamManager {
     getInitialTeamMembers() {
         return [
             // Top level - no reportsTo
+            { id: '51', name: 'EP - Bryan Cook', title: 'EP', photo: '', notes: '', links: [], reportsTo: null, pairedWith: '1' },
             { id: '1', name: 'Bryan Cook', title: 'ECD', photo: '', notes: '', links: [], reportsTo: null },
             // Second level - report to top level
+            // EPs (Executive Producers) - positioned to the left of CDs
+            { id: '52', name: 'EP - Aaron Porzel', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '3' },
             { id: '3', name: 'Aaron Porzel', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
+            { id: '53', name: 'EP - Art Castle', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '4' },
             { id: '4', name: 'Art Castle', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
+            { id: '54', name: 'EP - Jesse Thompson', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '5' },
             { id: '5', name: 'Jesse Thompson', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
+            { id: '55', name: 'EP - Jefferson Chaney', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '6' },
             { id: '6', name: 'Jefferson Chaney', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
+            { id: '56', name: 'EP - Justin Sirizzotti', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '7' },
             { id: '7', name: 'Justin Sirizzotti', title: 'ACD', photo: '', notes: '', links: [], reportsTo: '1' },
+            { id: '57', name: 'EP - Nate Cali', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '8' },
             { id: '8', name: 'Nate Cali', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '9', name: 'Ben Reesing', title: 'Senior Editor', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '10', name: 'Paul Oh', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '1' },
@@ -212,6 +220,14 @@ class TeamManager {
     setupEventListeners() {
         // Search functionality
         this.setupSearch();
+        
+        // Logo click to reset zoom
+        const resetZoomLogo = document.getElementById('resetZoomLogo');
+        if (resetZoomLogo) {
+            resetZoomLogo.addEventListener('click', () => {
+                this.resetZoom();
+            });
+        }
         
         // Add member button
         document.getElementById('addMemberBtn').addEventListener('click', () => {
@@ -693,6 +709,21 @@ class TeamManager {
 
         // Sort all children recursively by title priority
         this.sortHierarchyRecursive(rootMembers);
+        
+        // For level 0, sort to ensure EPs appear with their paired members
+        rootMembers.sort((a, b) => {
+            // If one has a pairedWith, sort by the paired ID
+            if (a.pairedWith && b.pairedWith) {
+                return a.pairedWith.localeCompare(b.pairedWith);
+            }
+            if (a.pairedWith) {
+                return a.pairedWith.localeCompare(b.id);
+            }
+            if (b.pairedWith) {
+                return a.id.localeCompare(b.pairedWith);
+            }
+            return a.id.localeCompare(b.id);
+        });
 
         return rootMembers;
     }
@@ -703,21 +734,88 @@ class TeamManager {
 
         let html = `<div class="org-level level-${level}">`;
         
-        members.forEach(member => {
-            const isRoot = level === 0;
-            // For level 1 (CDs), use their ID as the team identifier
-            const teamId = level === 1 ? member.id : parentId;
-            html += `<div class="org-node ${isRoot ? 'root-node' : ''} ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
-            html += this.createMemberCard(member, true);
+        // For level 0 and level 1, group EPs with their paired members
+        if (level === 0 || level === 1) {
+            const processed = new Set();
             
-            if (member.children && member.children.length > 0) {
-                html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
-                html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+            // First, find all EPs and their paired CDs
+            const epMap = new Map();
+            members.forEach(member => {
+                if (member.pairedWith) {
+                    epMap.set(member.pairedWith, member);
+                }
+            });
+            
+            members.forEach(member => {
+                if (processed.has(member.id)) return;
+                
+                // Skip EPs (they'll be rendered with their paired CD)
+                if (member.pairedWith) {
+                    processed.add(member.id);
+                    return;
+                }
+                
+                // Check if this member has a paired EP
+                const pairedEP = epMap.get(member.id);
+                
+                if (pairedEP) {
+                    // Render EP and CD as a pair
+                    html += `<div class="ep-cd-pair">`;
+                    
+                    // EP on the left
+                    const teamId = member.id; // Use CD's ID for team color
+                    html += `<div class="org-node ep-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                    html += this.createMemberCard(pairedEP, true);
+                    html += '</div>';
+                    
+                    // CD on the right
+                    html += `<div class="org-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                    html += this.createMemberCard(member, true);
+                    
+                    if (member.children && member.children.length > 0) {
+                        html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+                        html += '</div>';
+                    }
+                    
+                    html += '</div>'; // Close CD node
+                    html += '</div>'; // Close ep-cd-pair
+                    
+                    processed.add(member.id);
+                    processed.add(pairedEP.id);
+                } else {
+                    // Regular member without EP pair
+                    const teamId = member.id;
+                    html += `<div class="org-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                    html += this.createMemberCard(member, true);
+                    
+                    if (member.children && member.children.length > 0) {
+                        html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+                        html += '</div>';
+                    }
+                    
+                    html += '</div>';
+                    processed.add(member.id);
+                }
+            });
+        } else {
+            // For other levels, render normally
+            members.forEach(member => {
+                const isRoot = level === 0;
+                const teamId = level === 1 ? member.id : parentId;
+                html += `<div class="org-node ${isRoot ? 'root-node' : ''} ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                html += this.createMemberCard(member, true);
+                
+                if (member.children && member.children.length > 0) {
+                    html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                    html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+                    html += '</div>';
+                }
+                
                 html += '</div>';
-            }
-            
-            html += '</div>';
-        });
+            });
+        }
         
         html += '</div>';
         return html;
