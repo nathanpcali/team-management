@@ -556,6 +556,44 @@ class TeamManager {
         return html;
     }
 
+    // Get title priority for sorting (lower number = higher priority)
+    getTitlePriority(title) {
+        if (!title) return 999;
+        const titleLower = title.toLowerCase();
+        if (titleLower.includes('senior editor')) return 1;
+        if (titleLower.includes('editor') && !titleLower.includes('senior') && !titleLower.includes('junior') && !titleLower.includes('associate') && !titleLower.includes('pgd')) return 2;
+        if (titleLower.includes('junior editor')) return 3;
+        if (titleLower === 'ae' || titleLower.includes('assistant editor')) return 4;
+        if (titleLower.includes('associate editor')) return 5;
+        if (titleLower.includes('pgd editor')) return 6;
+        return 7; // Other titles
+    }
+
+    // Sort children by title priority
+    sortChildrenByTitle(children) {
+        return children.sort((a, b) => {
+            const priorityA = this.getTitlePriority(a.title);
+            const priorityB = this.getTitlePriority(b.title);
+            if (priorityA !== priorityB) {
+                return priorityA - priorityB;
+            }
+            // If same priority, sort alphabetically by name
+            return a.name.localeCompare(b.name);
+        });
+    }
+
+    // Recursively sort all children in the hierarchy
+    sortHierarchyRecursive(members) {
+        members.forEach(member => {
+            if (member.children && member.children.length > 0) {
+                // Sort this level's children
+                this.sortChildrenByTitle(member.children);
+                // Recursively sort children's children
+                this.sortHierarchyRecursive(member.children);
+            }
+        });
+    }
+
     // Build hierarchy tree structure
     buildHierarchy() {
         const memberMap = new Map();
@@ -581,6 +619,9 @@ class TeamManager {
                 }
             }
         });
+
+        // Sort all children recursively by title priority
+        this.sortHierarchyRecursive(rootMembers);
 
         return rootMembers;
     }
@@ -717,8 +758,11 @@ class TeamManager {
         // Use the smaller zoom to ensure everything fits
         const optimalZoom = Math.min(zoomX, zoomY, 1); // Don't zoom in beyond 100%
         
+        // Make it 25% bigger for the base zoom (100% view)
+        const adjustedZoom = optimalZoom * 1.25;
+        
         // Store this as the base zoom (100% view)
-        this.baseZoomLevel = Math.max(0.2, optimalZoom);
+        this.baseZoomLevel = Math.max(0.2, Math.min(adjustedZoom, 1)); // Cap at 1.0
         
         // Set the zoom to the base level and center the chart
         this.zoomLevel = this.baseZoomLevel;
