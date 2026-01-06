@@ -190,6 +190,31 @@ class TeamManager {
             chrisFontes.reportsTo = '30';
             needsUpdate = true;
         }
+        
+        // Fix Matt Matsil - should be under Art Castle (ID: 4) as AE, not EP
+        // Check if there's a Matt Matsil with wrong ID or wrong reporting
+        const mattMatsilOld = memberMap.get('51');
+        if (mattMatsilOld && mattMatsilOld.name === 'Matt Matsil') {
+            // This is the old Matt Matsil entry - update it
+            mattMatsilOld.id = '59';
+            mattMatsilOld.title = 'AE';
+            mattMatsilOld.reportsTo = '4';
+            delete mattMatsilOld.pairedWith;
+            delete mattMatsilOld.position;
+            needsUpdate = true;
+        }
+        
+        // Also check if Matt Matsil exists with ID 59 and fix if needed
+        const mattMatsil = memberMap.get('59');
+        if (mattMatsil && mattMatsil.name === 'Matt Matsil') {
+            if (mattMatsil.reportsTo !== '4' || mattMatsil.title !== 'AE') {
+                mattMatsil.reportsTo = '4';
+                mattMatsil.title = 'AE';
+                delete mattMatsil.pairedWith;
+                delete mattMatsil.position;
+                needsUpdate = true;
+            }
+        }
 
         // Save if any changes were made
         if (needsUpdate) {
@@ -268,7 +293,7 @@ class TeamManager {
             { id: '49', name: 'Christian Cornejo', title: 'AE', photo: '', notes: '', links: [], reportsTo: '45' },
             { id: '50', name: 'Steven Barber', title: 'AE', photo: '', notes: '', links: [], reportsTo: '6' },
             // Eighth level
-            { id: '51', name: 'Matt Matsil', title: 'AE', photo: '', notes: '', links: [], reportsTo: '49' }
+            { id: '59', name: 'Matt Matsil', title: 'AE', photo: '', notes: '', links: [], reportsTo: '4' }
         ];
     }
 
