@@ -798,27 +798,45 @@ class TeamManager {
                 const pairedEP = epMap.get(member.id);
                 
                 if (pairedEP) {
-                    // Render EP and CD as a pair
-                    html += `<div class="ep-cd-pair">`;
+                    // Special handling for Aaron (3) and Justin (7) - EP next to name
+                    const isSpecialLayout = member.id === '3' || member.id === '7';
                     
-                    // EP on the left
-                    const teamId = member.id; // Use CD's ID for team color
-                    html += `<div class="org-node ep-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
-                    html += this.createMemberCard(pairedEP, true);
-                    html += '</div>';
-                    
-                    // CD on the right
-                    html += `<div class="org-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
-                    html += this.createMemberCard(member, true);
-                    
-                    if (member.children && member.children.length > 0) {
-                        html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
-                        html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+                    if (isSpecialLayout) {
+                        // Render EP name next to CD name in the same card
+                        const teamId = member.id;
+                        html += `<div class="org-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.createMemberCardWithEP(member, pairedEP, true);
+                        
+                        if (member.children && member.children.length > 0) {
+                            html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                            html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+                            html += '</div>';
+                        }
+                        
                         html += '</div>';
+                    } else {
+                        // Render EP and CD as a pair (original layout)
+                        html += `<div class="ep-cd-pair">`;
+                        
+                        // EP on the left
+                        const teamId = member.id; // Use CD's ID for team color
+                        html += `<div class="org-node ep-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.createMemberCard(pairedEP, true);
+                        html += '</div>';
+                        
+                        // CD on the right
+                        html += `<div class="org-node ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                        html += this.createMemberCard(member, true);
+                        
+                        if (member.children && member.children.length > 0) {
+                            html += `<div class="org-children ${teamId ? 'team-' + teamId : ''}" data-team-id="${teamId || ''}">`;
+                            html += this.renderHierarchyLevel(member.children, level + 1, teamId);
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>'; // Close CD node
+                        html += '</div>'; // Close ep-cd-pair
                     }
-                    
-                    html += '</div>'; // Close CD node
-                    html += '</div>'; // Close ep-cd-pair
                     
                     processed.add(member.id);
                     processed.add(pairedEP.id);
@@ -858,6 +876,32 @@ class TeamManager {
         
         html += '</div>';
         return html;
+    }
+
+    // Create member card HTML with EP name next to the name
+    createMemberCardWithEP(member, ep, isOrgChart = false) {
+        let photoHtml = '';
+        if (member.photo) {
+            photoHtml = `<img src="${member.photo}" alt="${member.name}" class="member-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
+        }
+        
+        // Fallback photo with initials
+        const initials = member.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        const photoFallback = `<div class="member-photo-placeholder" style="display: ${member.photo ? 'none' : 'flex'};">${initials}</div>`;
+        
+        const titleHtml = member.title ? `<div class="member-title">${this.escapeHtml(member.title)}</div>` : '';
+        
+        return `
+            <div class="member-card" data-member-id="${member.id}">
+                ${photoHtml}
+                ${photoFallback}
+                <div class="member-name-container">
+                    <div class="member-name">${this.escapeHtml(member.name)}</div>
+                    <div class="ep-name-inline">${this.escapeHtml(ep.name)}</div>
+                </div>
+                ${titleHtml}
+            </div>
+        `;
     }
 
     // Create member card HTML
