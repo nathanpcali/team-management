@@ -231,6 +231,16 @@ class TeamManager {
                 needsUpdate = true;
             }
         }
+        
+        // Move Jesse Schwartz to report directly to Bryan Cook (top level, next to Bryan)
+        const jesseSchwartz = members.find(m => m.name && m.name.toLowerCase().includes('jesse schwartz'));
+        if (jesseSchwartz && jesseSchwartz.reportsTo !== '1') {
+            jesseSchwartz.reportsTo = '1'; // Report to Bryan Cook
+            // Remove any EP pairing if it exists
+            delete jesseSchwartz.pairedWith;
+            delete jesseSchwartz.position;
+            needsUpdate = true;
+        }
 
         // Save if any changes were made
         if (needsUpdate) {
