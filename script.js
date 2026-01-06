@@ -112,16 +112,26 @@ class TeamManager {
         });
 
         // Update Justin Sirizzotti's team (ID: '7')
-        const justinSirizzottiId = '7';
-        const justinTeam = ['19', '29']; // Craig Holzer, Joe Duva
+        // Craig Holzer reports to Justin Sirizzotti
+        const craigHolzer = memberMap.get('19');
+        if (craigHolzer && craigHolzer.reportsTo !== '7') {
+            craigHolzer.reportsTo = '7';
+            needsUpdate = true;
+        }
         
-        justinTeam.forEach(memberId => {
-            const member = memberMap.get(memberId);
-            if (member && member.reportsTo !== justinSirizzottiId) {
-                member.reportsTo = justinSirizzottiId;
-                needsUpdate = true;
-            }
-        });
+        // Joe Duva reports to Craig Holzer (ID: '19')
+        const joeDuva = memberMap.get('29');
+        if (joeDuva && joeDuva.reportsTo !== '19') {
+            joeDuva.reportsTo = '19';
+            needsUpdate = true;
+        }
+        
+        // Chris Fontes reports to Julia Marshall (ID: '30')
+        const chrisFontes = memberMap.get('31');
+        if (chrisFontes && chrisFontes.reportsTo !== '30') {
+            chrisFontes.reportsTo = '30';
+            needsUpdate = true;
+        }
 
         // Save if any changes were made
         if (needsUpdate) {
@@ -163,9 +173,9 @@ class TeamManager {
             { id: '26', name: 'Karla Llompart', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '16' },
             { id: '27', name: 'Stephen Noll', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '17' },
             { id: '28', name: 'John Gerbec', title: 'Senior Editor', photo: '', notes: '', links: [], reportsTo: '6' },
-            { id: '29', name: 'Joe Duva', title: 'AE', photo: '', notes: '', links: [], reportsTo: '7' },
+            { id: '29', name: 'Joe Duva', title: 'AE', photo: '', notes: '', links: [], reportsTo: '19' },
             { id: '30', name: 'Julia Marshall', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '20' },
-            { id: '31', name: 'Chris Fontes', title: 'AE', photo: '', notes: '', links: [], reportsTo: '21' },
+            { id: '31', name: 'Chris Fontes', title: 'AE', photo: '', notes: '', links: [], reportsTo: '30' },
             { id: '32', name: 'Vanessa Aoki', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '21' },
             { id: '33', name: 'Thomas Irreno Pinilla', title: 'PGD Editor', photo: '', notes: '', links: [], reportsTo: '22' },
             { id: '34', name: 'Luke Nelson', title: 'AE', photo: '', notes: '', links: [], reportsTo: '23' },
