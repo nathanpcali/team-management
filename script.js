@@ -758,12 +758,10 @@ class TeamManager {
         const scaledWidth = chartWidth * this.zoomLevel;
         const scaledHeight = chartHeight * this.zoomLevel;
         
-        // Center the chart horizontally if it's smaller than the container
-        if (scaledWidth < containerWidth) {
-            this.panX = (containerWidth - scaledWidth) / 2;
-        } else {
-            this.panX = 0;
-        }
+        // Center the chart horizontally
+        // Since the grid is positioned at left: 50%, panX = 0 means centered
+        // We'll use transform to center it initially
+        this.panX = 0;
         
         // Center the chart vertically if it's smaller than the container
         if (scaledHeight < containerHeight) {
@@ -785,7 +783,9 @@ class TeamManager {
     updateTransform() {
         const container = document.getElementById('teamGrid');
         if (container) {
-            container.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoomLevel})`;
+            // Position at left: 50% centers it, then translate by -50% to center the element itself
+            // Then apply pan and scale
+            container.style.transform = `translate(calc(-50% + ${this.panX}px), ${this.panY}px) scale(${this.zoomLevel})`;
             container.style.transformOrigin = 'top center';
         }
     }
