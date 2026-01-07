@@ -10,6 +10,8 @@ class TeamManager {
         this.isPanning = false;
         this.startX = 0;
         this.startY = 0;
+        this.moveMode = false; // Toggle for move member mode
+        this.draggedMember = null; // Currently dragged member
         this.init();
     }
 
@@ -392,9 +394,18 @@ class TeamManager {
             this.setZoom(this.zoomLevel + delta);
         }, { passive: false });
 
+        // Move Member toggle
+        const moveMemberToggle = document.getElementById('moveMemberToggle');
+        if (moveMemberToggle) {
+            moveMemberToggle.addEventListener('change', (e) => {
+                this.moveMode = e.target.checked;
+                this.updateMoveMode();
+            });
+        }
+
         // Pan functionality with mouse drag
         container.addEventListener('mousedown', (e) => {
-            if (e.button === 0 && !e.target.closest('.member-card')) { // Left mouse button, not on a card
+            if (e.button === 0 && !e.target.closest('.member-card') && !this.moveMode) { // Left mouse button, not on a card, and not in move mode
                 this.isPanning = true;
                 this.startX = e.clientX - this.panX;
                 this.startY = e.clientY - this.panY;
@@ -821,6 +832,11 @@ class TeamManager {
 
         // Add click listeners and drag handlers to cards
         this.setupCardInteractions(grid);
+        
+        // Update move mode if enabled
+        if (this.moveMode) {
+            this.updateMoveMode();
+        }
     }
 
     // Render organizational chart
@@ -1171,12 +1187,145 @@ class TeamManager {
             const member = this.teamMembers.find(m => m.id === memberId);
             if (!member) return;
 
-            // Click handler
-            card.addEventListener('click', (e) => {
-                if (!this.isPanning) {
+            // Remove existing listeners to avoid duplicates
+            const newCard = card.cloneNode(true);
+            card.parentNode.replaceChild(newCard, card);
+            const cardEl = newCard;
+
+            // Click handler (only when not in move mode)
+            cardEl.addEventListener('click', (e) => {
+                if (!this.isPanning && !this.moveMode) {
                     this.openDetailModal(member);
                 }
             });
+
+            // Drag and drop handlers
+            this.setupDragAndDrop(cardEl, member);
+        });
+    }
+
+    // Setup drag and drop for a member card
+    setupDragAndDrop(card, member) {
+        // Don't allow dragging ECD or EPs
+        const isECD = member.id === '1' || (member.reportsTo === null && member.title && member.title.toUpperCase() === 'ECD');
+        const isEP = member.title && member.title.toUpperCase() === 'EP';
+        
+        if (isECD || isEP) {
+            return; // ECD and EPs cannot be moved
+        }
+
+        card.addEventListener('dragstart', (e) => {
+            if (!this.moveMode) {
+                e.preventDefault();
+                return;
+            }
+            this.draggedMember = member;
+            card.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', member.id);
+        });
+
+        card.addEventListener('dragend', (e) => {
+            card.classList.remove('dragging');
+            // Remove drop target styling from all cards
+            document.querySelectorAll('.member-card').forEach(c => {
+                c.classList.remove('drop-target');
+            });
+            this.draggedMember = null;
+        });
+
+        card.addEventListener('dragover', (e) => {
+            if (!this.moveMode || !this.draggedMember) {
+                return;
+            }
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            // Don't allow dropping on self or ECD/EP
+            const targetMemberId = card.dataset.memberId;
+            const targetMember = this.teamMembers.find(m => m.id === targetMemberId);
+            if (!targetMember || targetMemberId === this.draggedMember.id) {
+                return;
+            }
+            
+            const targetIsECD = targetMember.id === '1' || (targetMember.reportsTo === null && targetMember.title && targetMember.title.toUpperCase() === 'ECD');
+            const targetIsEP = targetMember.title && targetMember.title.toUpperCase() === 'EP';
+            
+            if (!targetIsECD && !targetIsEP) {
+                card.classList.add('drop-target');
+            }
+        });
+
+        card.addEventListener('dragleave', (e) => {
+            card.classList.remove('drop-target');
+        });
+
+        card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            card.classList.remove('drop-target');
+            
+            if (!this.moveMode || !this.draggedMember) {
+                return;
+            }
+
+            const targetMemberId = card.dataset.memberId;
+            const targetMember = this.teamMembers.find(m => m.id === targetMemberId);
+            
+            if (!targetMember || targetMemberId === this.draggedMember.id) {
+                return;
+            }
+
+            // Don't allow dropping on ECD or EP
+            const targetIsECD = targetMember.id === '1' || (targetMember.reportsTo === null && targetMember.title && targetMember.title.toUpperCase() === 'ECD');
+            const targetIsEP = targetMember.title && targetMember.title.toUpperCase() === 'EP';
+            
+            if (targetIsECD || targetIsEP) {
+                return;
+            }
+
+            // Update the dragged member to report to the target member
+            this.draggedMember.reportsTo = targetMemberId;
+            
+            // Remove pairedWith if it exists (since we're changing reporting)
+            if (this.draggedMember.pairedWith) {
+                delete this.draggedMember.pairedWith;
+            }
+            if (this.draggedMember.position) {
+                delete this.draggedMember.position;
+            }
+            
+            this.saveToStorage();
+            this.renderTeam();
+        });
+    }
+
+    // Update move mode styling
+    updateMoveMode() {
+        const grid = document.getElementById('teamGrid');
+        if (!grid) return;
+
+        const cards = grid.querySelectorAll('.member-card');
+        cards.forEach(card => {
+            const memberId = card.dataset.memberId;
+            const member = this.teamMembers.find(m => m.id === memberId);
+            if (!member) return;
+
+            const isECD = member.id === '1' || (member.reportsTo === null && member.title && member.title.toUpperCase() === 'ECD');
+            const isEP = member.title && member.title.toUpperCase() === 'EP';
+
+            if (this.moveMode) {
+                if (isECD || isEP) {
+                    card.classList.add('not-draggable');
+                    card.draggable = false;
+                } else {
+                    card.classList.add('draggable');
+                    card.draggable = true;
+                }
+                card.classList.add('move-mode');
+            } else {
+                card.classList.remove('draggable', 'not-draggable', 'move-mode');
+                card.draggable = false;
+            }
         });
     }
 

@@ -801,6 +801,39 @@ body {
     background: rgba(255, 255, 255, 0.12);
 }
 
+/* Move Mode Styles */
+.member-card.move-mode {
+    cursor: move;
+}
+
+.member-card.draggable {
+    cursor: move;
+}
+
+.member-card.draggable:hover {
+    border-color: rgba(74, 144, 226, 0.8);
+    box-shadow: 0 12px 40px rgba(74, 144, 226, 0.5);
+}
+
+.member-card.not-draggable {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.member-card.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+    z-index: 1000;
+}
+
+.member-card.drop-target {
+    border: 3px solid rgba(74, 144, 226, 1) !important;
+    box-shadow: 0 0 30px rgba(74, 144, 226, 0.8) !important;
+    transform: scale(1.1);
+    z-index: 999;
+    background: rgba(74, 144, 226, 0.2) !important;
+}
+
 /* Edit mode styles */
 .member-card.edit-mode {
     cursor: move;
