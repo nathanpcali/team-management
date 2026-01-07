@@ -398,8 +398,58 @@ class TeamManager {
         const moveMemberToggle = document.getElementById('moveMemberToggle');
         if (moveMemberToggle) {
             moveMemberToggle.addEventListener('change', (e) => {
-                this.moveMode = e.target.checked;
-                this.updateMoveMode();
+                if (e.target.checked) {
+                    // Show password modal instead of enabling directly
+                    e.target.checked = false; // Keep toggle off until password is verified
+                    this.openPasswordModal();
+                } else {
+                    // Allow turning off without password
+                    this.moveMode = false;
+                    this.updateMoveMode();
+                }
+            });
+        }
+
+        // Password modal handlers
+        const passwordModal = document.getElementById('passwordModal');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitPasswordBtn = document.getElementById('submitPasswordBtn');
+        const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
+        const closePasswordBtn = document.querySelector('.close-password');
+        const passwordError = document.getElementById('passwordError');
+
+        if (submitPasswordBtn) {
+            submitPasswordBtn.addEventListener('click', () => {
+                this.verifyPassword();
+            });
+        }
+
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.verifyPassword();
+                }
+            });
+        }
+
+        if (cancelPasswordBtn) {
+            cancelPasswordBtn.addEventListener('click', () => {
+                this.closePasswordModal();
+            });
+        }
+
+        if (closePasswordBtn) {
+            closePasswordBtn.addEventListener('click', () => {
+                this.closePasswordModal();
+            });
+        }
+
+        // Close password modal when clicking outside
+        if (passwordModal) {
+            passwordModal.addEventListener('click', (e) => {
+                if (e.target === passwordModal) {
+                    this.closePasswordModal();
+                }
             });
         }
 
@@ -1297,6 +1347,66 @@ class TeamManager {
             this.saveToStorage();
             this.renderTeam();
         });
+    }
+
+    // Open password modal
+    openPasswordModal() {
+        const passwordModal = document.getElementById('passwordModal');
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordError = document.getElementById('passwordError');
+        
+        if (passwordModal && passwordInput) {
+            passwordModal.classList.add('show');
+            passwordInput.value = '';
+            passwordInput.focus();
+            if (passwordError) {
+                passwordError.style.display = 'none';
+            }
+        }
+    }
+
+    // Close password modal
+    closePasswordModal() {
+        const passwordModal = document.getElementById('passwordModal');
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordError = document.getElementById('passwordError');
+        
+        if (passwordModal && passwordInput) {
+            passwordModal.classList.remove('show');
+            passwordInput.value = '';
+            if (passwordError) {
+                passwordError.style.display = 'none';
+            }
+        }
+    }
+
+    // Verify password and enable move mode if correct
+    verifyPassword() {
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordError = document.getElementById('passwordError');
+        const moveMemberToggle = document.getElementById('moveMemberToggle');
+        const correctPassword = 'Harbor';
+
+        if (!passwordInput) return;
+
+        const enteredPassword = passwordInput.value.trim();
+
+        if (enteredPassword === correctPassword) {
+            // Password is correct - enable move mode
+            this.moveMode = true;
+            if (moveMemberToggle) {
+                moveMemberToggle.checked = true;
+            }
+            this.updateMoveMode();
+            this.closePasswordModal();
+        } else {
+            // Password is incorrect - show error
+            if (passwordError) {
+                passwordError.style.display = 'block';
+            }
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
     }
 
     // Update move mode styling

@@ -121,6 +121,27 @@
         </div>
     </div>
 
+    <!-- Password Modal for Move Member -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Enter Password</h2>
+                <span class="close-password">&times;</span>
+            </div>
+            <div style="padding: 30px;">
+                <div class="form-group">
+                    <label for="passwordInput">Password Required</label>
+                    <input type="password" id="passwordInput" placeholder="Enter password..." autocomplete="off">
+                    <p id="passwordError" style="color: #fc8181; font-size: 12px; margin-top: 8px; display: none;">Incorrect password. Please try again.</p>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelPasswordBtn">Cancel</button>
+                    <button type="button" class="btn-primary" id="submitPasswordBtn">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
