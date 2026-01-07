@@ -118,6 +118,16 @@ class TeamManager {
             }
         }
 
+        // Remove EP - Nate Cali if it exists (should not be there)
+        const epNateCali = memberMap.get('57');
+        if (epNateCali && epNateCali.name === 'EP - Nate Cali') {
+            const index = members.findIndex(m => m.id === '57' && m.name === 'EP - Nate Cali');
+            if (index !== -1) {
+                members.splice(index, 1);
+                needsUpdate = true;
+            }
+        }
+
         // Add EPs if they don't exist
         const epMappings = [
             { id: '61', name: 'Jesse Schwartz', title: 'EP', pairedWith: '1', reportsTo: null, position: 'left' },
@@ -126,8 +136,7 @@ class TeamManager {
             { id: '53', name: 'EP - Art Castle', title: 'EP', pairedWith: '4', reportsTo: '1' },
             { id: '54', name: 'EP - Jesse Thompson', title: 'EP', pairedWith: '5', reportsTo: '1' },
             { id: '55', name: 'EP - Jefferson Chaney', title: 'EP', pairedWith: '6', reportsTo: '1' },
-            { id: '60', name: 'Greg Zimny', title: 'EP', pairedWith: '7', reportsTo: '1', position: 'left' },
-            { id: '57', name: 'EP - Nate Cali', title: 'EP', pairedWith: '8', reportsTo: '1' }
+            { id: '60', name: 'Greg Zimny', title: 'EP', pairedWith: '7', reportsTo: '1', position: 'left' }
         ];
 
         epMappings.forEach(ep => {
@@ -286,7 +295,6 @@ class TeamManager {
             { id: '6', name: 'Jefferson Chaney', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '60', name: 'Greg Zimny', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '7', position: 'left' },
             { id: '7', name: 'Justin Sirizzotti', title: 'ACD', photo: '', notes: '', links: [], reportsTo: '1' },
-            { id: '57', name: 'EP - Nate Cali', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '8' },
             { id: '8', name: 'Nate Cali', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '9', name: 'Ben Reesing', title: 'Senior Editor', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '10', name: 'Paul Oh', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '1' },
