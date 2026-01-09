@@ -296,7 +296,7 @@ class TeamManager {
             { id: '55', name: 'EP - Jefferson Chaney', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '6' },
             { id: '6', name: 'Jefferson Chaney', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '60', name: 'Greg Zimny', title: 'EP', photo: '', notes: '', links: [], reportsTo: '1', pairedWith: '7', position: 'left' },
-            { id: '7', name: 'Justin Sirizzotti', title: 'ACD', photo: '', notes: '', links: [], reportsTo: '1' },
+            { id: '7', name: 'Justin Sirizzotti', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '8', name: 'Nate Cali', title: 'CD', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '9', name: 'Ben Reesing', title: 'Senior Editor', photo: '', notes: '', links: [], reportsTo: '1' },
             { id: '10', name: 'Paul Oh', title: 'Editor', photo: '', notes: '', links: [], reportsTo: '1' },
