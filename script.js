@@ -1,7 +1,7 @@
 // Team Management Application
 class TeamManager {
     constructor() {
-        this.teamMembers = this.loadFromStorage();
+        this.teamMembers = []; // Will be loaded asynchronously
         this.currentEditingId = null;
         this.zoomLevel = 1;
         this.baseZoomLevel = 1; // The zoom level that shows the entire chart (100%)
@@ -12,10 +12,13 @@ class TeamManager {
         this.startY = 0;
         this.moveMode = false; // Toggle for move member mode
         this.draggedMember = null; // Currently dragged member
-        this.init();
+        // init() will be called manually after constructor
     }
 
     async init() {
+        // Load team members from Firebase or localStorage
+        this.teamMembers = await this.loadFromStorage();
+        
         // Load photos from JSON file and merge with team members
         await this.loadPhotosFromJSON();
         
@@ -52,8 +55,11 @@ class TeamManager {
                 this.mergePhotosFromJSON(jsonData);
             }
         } catch (error) {
-            console.log('Could not load photos from JSON file:', error);
-            // Continue without photos - not a critical error
+            // Silently fail if file can't be loaded (e.g., CORS when opening file directly)
+            // Photos will just use empty strings from team member data
+            if (window.location.protocol !== 'file:') {
+                console.log('Could not load photos from JSON file:', error);
+            }
         }
     }
 
@@ -77,9 +83,85 @@ class TeamManager {
         this.saveToStorage();
     }
 
-    // Load team members from localStorage
-    loadFromStorage() {
+    // Load team members from Firebase or localStorage fallback
+    async loadFromStorage() {
+        const DATA_VERSION = '2.1'; // Increment this when structure changes significantly
+        
+        // Try Firebase first if available
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+            console.log('Firebase is available. Loading from Firebase...');
+            try {
+                const db = firebase.firestore();
+                const doc = await db.collection('teamData').doc('members').get();
+                
+                if (doc.exists) {
+                    console.log('Found data in Firebase');
+                    const data = doc.data();
+                    const storedVersion = data.version;
+                    
+                    // If version doesn't match, force refresh from source
+                    if (storedVersion !== DATA_VERSION) {
+                        console.log('Data version mismatch. Refreshing from source...');
+                        const initialMembers = this.getInitialTeamMembers();
+                        await this.saveToStorage(); // Save initial data to Firebase
+                        return initialMembers;
+                    }
+                    
+                    const members = data.members || [];
+                    
+                    if (members.length > 0) {
+                        console.log(`Loaded ${members.length} members from Firebase`);
+                        // Check if members have reportsTo field - if not, reinitialize
+                        if (!members[0].hasOwnProperty('reportsTo')) {
+                            const initialMembers = this.getInitialTeamMembers();
+                            await this.saveToStorage();
+                            return initialMembers;
+                        }
+                        
+                        // Check if Lauren Shawe (ID: 58) exists - if not, clear and reload
+                        const hasLaurenShawe = members.some(m => m.id === '58');
+                        if (!hasLaurenShawe) {
+                            console.log('Lauren Shawe not found in data. Refreshing from source...');
+                            const initialMembers = this.getInitialTeamMembers();
+                            await this.saveToStorage();
+                            return initialMembers;
+                        }
+                        
+                        // Migrate hierarchy changes: update reporting relationships
+                        const updatedMembers = this.migrateHierarchy(members);
+                        if (updatedMembers !== members) {
+                            await this.saveToStorage(); // Save migrated data
+                        }
+                        return updatedMembers || members;
+                    }
+                } else {
+                    // No data in Firebase, initialize and save
+                    console.log('No data in Firebase. Initializing...');
+                    const initialMembers = this.getInitialTeamMembers();
+                    await this.saveToStorage();
+                    return initialMembers;
+                }
+            } catch (error) {
+                console.error('Error loading from Firebase:', error);
+                console.log('Falling back to localStorage...');
+                // Fall back to localStorage
+            }
+        } else {
+            console.log('Firebase not available. Using localStorage...');
+        }
+        
+        // Fallback to localStorage
         const stored = localStorage.getItem('harborTeamMembers');
+        const storedVersion = localStorage.getItem('harborTeamDataVersion');
+        
+        // If version doesn't match or doesn't exist, force refresh from source
+        if (storedVersion !== DATA_VERSION) {
+            console.log('Data version mismatch. Refreshing from source...');
+            localStorage.removeItem('harborTeamMembers');
+            localStorage.setItem('harborTeamDataVersion', DATA_VERSION);
+            return this.getInitialTeamMembers();
+        }
+        
         if (stored) {
             const members = JSON.parse(stored);
             // Check if members have reportsTo field - if not, reinitialize
@@ -101,6 +183,7 @@ class TeamManager {
             return updatedMembers || members;
         }
         // If no stored data, initialize with team from organizational chart
+        localStorage.setItem('harborTeamDataVersion', DATA_VERSION);
         return this.getInitialTeamMembers();
     }
 
@@ -190,6 +273,15 @@ class TeamManager {
             }
         });
 
+        // Update Justin Sirizzotti's title from ACD to CD (ID: '7')
+        const justinSirizzotti = memberMap.get('7');
+        if (justinSirizzotti && justinSirizzotti.name === 'Justin Sirizzotti') {
+            if (justinSirizzotti.title !== 'CD') {
+                justinSirizzotti.title = 'CD';
+                needsUpdate = true;
+            }
+        }
+        
         // Update Justin Sirizzotti's team (ID: '7')
         // Craig Holzer reports to Justin Sirizzotti
         const craigHolzer = memberMap.get('19');
@@ -272,7 +364,9 @@ class TeamManager {
 
         // Save if any changes were made
         if (needsUpdate) {
-            localStorage.setItem('harborTeamMembers', JSON.stringify(members));
+            // Save to Firebase or localStorage
+            this.teamMembers = members; // Update instance variable
+            this.saveToStorage(); // This will save to Firebase if available, or localStorage
         }
         
         return members;
@@ -350,9 +444,30 @@ class TeamManager {
         ];
     }
 
-    // Save team members to localStorage
-    saveToStorage() {
+    // Save team members to storage (Firebase or localStorage fallback)
+    async saveToStorage() {
+        const DATA_VERSION = '2.1'; // Must match version in loadFromStorage
+        
+        // Try Firebase first if available
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+            try {
+                const db = firebase.firestore();
+                await db.collection('teamData').doc('members').set({
+                    members: this.teamMembers,
+                    version: DATA_VERSION,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('Data saved to Firebase');
+                return;
+            } catch (error) {
+                console.error('Error saving to Firebase:', error);
+                // Fall back to localStorage
+            }
+        }
+        
+        // Fallback to localStorage
         localStorage.setItem('harborTeamMembers', JSON.stringify(this.teamMembers));
+        localStorage.setItem('harborTeamDataVersion', DATA_VERSION);
     }
 
     // Setup event listeners
@@ -1788,7 +1903,8 @@ class TeamManager {
 }
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
-    new TeamManager();
+document.addEventListener('DOMContentLoaded', async () => {
+    const manager = new TeamManager();
+    await manager.init();
 });
 
