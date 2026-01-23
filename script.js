@@ -721,10 +721,10 @@ class TeamManager {
         // Clear existing options except the first one
         selectElement.innerHTML = '<option value="">Select a Creative Director...</option>';
         
-        // Find all CDs and ACDs (Creative Directors and Associate Creative Directors)
+        // Find all CDs, ACDs, and ECDs (Creative Directors, Associate Creative Directors, and Executive Creative Directors)
         const cds = this.teamMembers.filter(member => {
             const title = (member.title || '').toUpperCase();
-            return title === 'CD' || title === 'ACD' || title.includes('CREATIVE DIRECTOR');
+            return title === 'CD' || title === 'ACD' || title === 'ECD' || title.includes('CREATIVE DIRECTOR');
         });
         
         // Add each CD as an option
@@ -741,10 +741,10 @@ class TeamManager {
         // Clear existing options
         selectElement.innerHTML = '<option value="">Select a Creative Director...</option>';
         
-        // Find all CDs and ACDs (Creative Directors and Associate Creative Directors)
+        // Find all CDs, ACDs, and ECDs (Creative Directors, Associate Creative Directors, and Executive Creative Directors)
         const cds = this.teamMembers.filter(member => {
             const title = (member.title || '').toUpperCase();
-            return title === 'CD' || title === 'ACD' || title.includes('CREATIVE DIRECTOR');
+            return title === 'CD' || title === 'ACD' || title === 'ECD' || title.includes('CREATIVE DIRECTOR');
         });
         
         // Add each CD as an option
